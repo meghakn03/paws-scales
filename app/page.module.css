@@ -1,0 +1,280 @@
+/* app/page.module.css */
+.header {
+    background-color: #ffffff;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    z-index: 1100;
+  }
+  
+  .categoryCard, .productCard {
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  
+  .categoryCard:hover, .productCard:hover {
+    transform: scale(1.05);
+    box-shadow: 0 8px 12px rgba(0, 0, 0, 0.2);
+  }
+  
+  .categoryCard img, .productCard img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+  }
+  
+  .categoryCard h3, .productCard h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-top: 10px;
+  }
+  
+  .productCard p {
+    color: #6b7280;
+    margin-top: 5px;
+  }
+  
+  .iconContainer {
+    transition: transform 0.3s ease, color 0.3s ease;
+  }
+  
+  .iconContainer:hover {
+    transform: scale(1.1);
+    color: #f59e0b; /* Tailwind CSS color for hover effect */
+  }
+  
+  /* Dropdown styles */
+.dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background-color: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  width: 250px;
+  z-index: 1100; /* High z-index to ensure it is above the video */
+}
+
+  
+  /* dog category */
+  .hero {
+    position: relative;
+    height: 60vh; /* Adjust as needed */
+  }
+  
+  .heroVideo {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  
+  .productCategory {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #fff;
+  }
+  
+  /* Dynamic Products Section */
+.dynamicProductsSection {
+  background-color: #f9f9f9; /* Adjust the background color */
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Close Button */
+.closeButton {
+  background: none;
+  border: none;
+  font-size: 2rem;
+  color: #e74c3c;
+  cursor: pointer;
+  position: absolute;
+  top: 10px;
+  right: 10px;
+}
+
+/* Product Card */
+.productCard {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+  position: relative;
+}
+
+/* Product Image */
+.productImage {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+}
+
+/* Product Details */
+.productDetails {
+  padding: 16px;
+}
+
+/* Product Name */
+.productName {
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: #333;
+}
+
+/* Product Price */
+.productPrice {
+  font-size: 1rem;
+  color: #555;
+}
+
+/* Quantity Controls */
+.quantityButton {
+  background-color: #f6f8fa;
+  color: #050101;
+  border: none;
+  border-radius: 4px;
+  padding: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.decrementButton {
+  margin-right: 8px;
+}
+
+.incrementButton {
+  margin-left: 8px;
+}
+
+.quantityInput {
+  width: 60px;
+  text-align: center;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 8px;
+  font-size: 1rem;
+  margin: 0 8px;
+}
+
+/* Add to Cart and Buy Now Buttons */
+.addToCartButton, .buyNowButton {
+  background-color: #28a745;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 10px 20px;
+  font-size: 1rem;
+  cursor: pointer;
+  margin-right: 8px;
+}
+
+.addToCartButton {
+  background-color: #007bff;
+}
+
+.buyNowButton {
+  background-color: #ffc107;
+}
+
+/* Hover Effect */
+.addToCartButton:hover, .buyNowButton:hover {
+  transform: scale(1.05); /* Enlarges the button slightly */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Adds shadow for depth */
+}
+
+/* Close Button */
+.closeButton {
+  background: none;
+  border: none;
+  color: #ff4d4d; /* Red color for the close button */
+  font-size: 1.5rem;
+  cursor: pointer;
+  transition: color 0.3s ease, transform 0.3s ease; /* Added transition */
+  position: absolute;
+  top: 10px;
+  right: 10px;
+}
+
+/* Hover Effect for Close Button */
+.closeButton:hover {
+  color: #ff1a1a; /* Darker red on hover */
+  transform: scale(1.1); /* Slightly enlarges the button on hover */
+}
+
+
+.iconButton {
+  transition: transform 0.3s ease, background-color 0.3s ease;
+}
+
+.icon {
+  background-color: transparent; /* Ensures background is transparent */
+  color: white; /* Changes icon color to white */
+}
+
+.iconButton:hover .icon {
+  transform: scale(1.2); /* Enlarges the icon on hover */
+}
+
+/* Add these styles to page.module.css */
+
+.dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background-color: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  width: 250px;
+  z-index: 1100;
+}
+
+.dropdown ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.dropdownItem {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  border-bottom: 1px solid #ddd;
+}
+
+.dropdownItem:last-child {
+  border-bottom: none;
+}
+
+.emptyMessage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  text-align: center;
+  color: #555;
+}
+
+.emptyMessage p {
+  margin-left: 10px;
+}
+
+.iconButton {
+  transition: transform 0.3s ease, background-color 0.3s ease;
+}
+
+.icon {
+  background-color: transparent; /* Ensures background is transparent */
+  color: white; /* Changes icon color to white */
+}
+
+.iconButton:hover .icon {
+  transform: scale(1.2); /* Enlarges the icon on hover */
+}

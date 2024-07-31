@@ -3,8 +3,11 @@
 import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { FaShoppingCart, FaUserCircle, FaBox, FaSadTear, FaSearch, FaBars } from 'react-icons/fa';
+import { FaShoppingCart, FaUserCircle, FaBox, FaSadTear, FaSearch, FaBars, FaPlus } from 'react-icons/fa';
 import styles from './page.module.css';
+import SellProductModal from './components/SellProductModal';
+import YourProductsModal from './components/YourProuductsModal';
+
 
 export default function Home() {
   const [cartOpen, setCartOpen] = useState(false);
@@ -19,6 +22,15 @@ export default function Home() {
   const ordersRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null); // For menu
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isYourProductsModalOpen, setIsYourProductsModalOpen] = useState(false);
+
+
+  const openModal = () => setIsModalOpen(true);
+  const closeModal = () => setIsModalOpen(false);
+  const openYourProductsModal = () => setIsYourProductsModalOpen(true);
+  const closeYourProductsModal = () => setIsYourProductsModalOpen(false);
+
 
   const toggleCart = () => setCartOpen(!cartOpen);
   const toggleProfile = () => setProfileOpen(!profileOpen);
@@ -138,6 +150,23 @@ export default function Home() {
           </div>
         )}
       </div>
+      <div className={`relative flex flex-col items-center ${styles.iconContainer}`}>
+              <div className="flex flex-col items-center cursor-pointer" onClick={openModal}>
+                <FaPlus className="text-2xl text-gray-900" />
+                <span className="text-sm text-gray-900">Sell Product</span>
+              </div>
+            </div>
+            <div className={`relative flex flex-col items-center ${styles.iconContainer}`}>
+        <div className="flex flex-col items-center cursor-pointer" onClick={openYourProductsModal}>
+          <FaBox className="text-2xl text-gray-900" />
+          <span className="text-sm text-gray-900">Your Products</span>
+        </div>
+      </div>
+      <div className="md:hidden flex items-center">
+        <button onClick={toggleMenu}>
+          <FaBars className="text-2xl text-gray-900" />
+        </button>
+      </div>
     </div>
   </div>
 </header>
@@ -220,6 +249,9 @@ export default function Home() {
           </div>
         </div>
       </main>
-    </div>
-  );
+{/* Sell Product Modal */}
+{isModalOpen && <SellProductModal isOpen={isModalOpen} onClose={closeModal} />}
+<YourProductsModal isOpen={isYourProductsModalOpen} onClose={closeYourProductsModal} />
+
+    </div>  );
 }

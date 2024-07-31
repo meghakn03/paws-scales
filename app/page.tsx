@@ -162,11 +162,11 @@ export default function Home() {
           <span className="text-sm text-gray-900">Your Products</span>
         </div>
       </div>
-      <div className="md:hidden flex items-center">
+      {/* <div className="md:hidden flex items-center">
         <button onClick={toggleMenu}>
           <FaBars className="text-2xl text-gray-900" />
         </button>
-      </div>
+      </div> */}
     </div>
   </div>
 </header>

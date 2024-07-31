@@ -1,25 +1,39 @@
 import { useState } from 'react';
 import axios from 'axios';
 import styles from './SellProductModal.module.css'; // Ensure this path is correct
-import '../page.module.css';
 
 interface SellProductModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
+type SubCategories = {
+  [key: string]: string[];
+};
+
 const SellProductModal: React.FC<SellProductModalProps> = ({ isOpen, onClose }) => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState<number | string>('');
   const [category, setCategory] = useState('');
+  const [subCategory, setSubCategory] = useState('');
   const [image, setImage] = useState<File | null>(null);
   const [quantity, setQuantity] = useState<number | string>('');
+
+  // Define sub-category options with a more flexible type
+  const subCategories: SubCategories = {
+    'Dog Supplies': ['Dog Beds and Accessories', 'Dog Grooming', 'Dog Toys', 'Dog Food'],
+    'Cat Supplies': ['Cat Beds and Accessories', 'Cat Grooming', 'Cat Toys', 'Cat Food'],
+    'Small Animals': ['Small Animal Beds', 'Small Animal Grooming', 'Small Animal Toys', 'Small Animal Food'],
+    'Reptiles': ['Reptile Habitats', 'Reptile Food', 'Reptile Toys', 'Reptile Bedding'],
+    'Fish Supplies': ['Fish Tanks', 'Fish Food', 'Fish Toys', 'Fish Filters'],
+    'Bird Supplies': ['Bird Cages', 'Bird Food', 'Bird Toys', 'Bird Accessories'],
+  };
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
 
-    if (!name || !description || !price || !category || !quantity || !image) {
+    if (!name || !description || !price || !category || !subCategory || !quantity || !image) {
       alert('Please fill in all fields');
       return;
     }
@@ -32,7 +46,9 @@ const SellProductModal: React.FC<SellProductModalProps> = ({ isOpen, onClose }) 
       description,
       price: parseFloat(price.toString()),
       category,
+      subCategory,
       imageUrl,
+      quantity: parseInt(quantity.toString(), 10) // Ensure quantity is a number
     };
 
     try {
@@ -111,7 +127,10 @@ const SellProductModal: React.FC<SellProductModalProps> = ({ isOpen, onClose }) 
             <select
               id="category"
               value={category}
-              onChange={(e) => setCategory(e.target.value)}
+              onChange={(e) => {
+                setCategory(e.target.value);
+                setSubCategory(''); // Reset sub-category when category changes
+              }}
               required
             >
               <option value="">Select a category</option>
@@ -119,7 +138,23 @@ const SellProductModal: React.FC<SellProductModalProps> = ({ isOpen, onClose }) 
               <option value="Cat Supplies">Cat Supplies</option>
               <option value="Small Animals">Small Animals</option>
               <option value="Reptiles">Reptiles</option>
-              {/* Add more categories as needed */}
+              <option value="Fish Supplies">Fish Supplies</option>
+              <option value="Bird Supplies">Bird Supplies</option>
+            </select>
+          </div>
+          <div className={styles.formGroup}>
+            <label htmlFor="subCategory">Sub-Category:</label>
+            <select
+              id="subCategory"
+              value={subCategory}
+              onChange={(e) => setSubCategory(e.target.value)}
+              required
+              disabled={!category} // Disable if no category is selected
+            >
+              <option value="">Select a sub-category</option>
+              {category && subCategories[category]?.map((sub: string, index: number) => (
+                <option key={index} value={sub}>{sub}</option>
+              ))}
             </select>
           </div>
           <div className={styles.formGroup}>

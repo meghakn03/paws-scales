@@ -6,93 +6,93 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faShoppingCart, faClipboardList, faSadTear } from '@fortawesome/free-solid-svg-icons';
 import styles from '../../page.module.css';
 
+// Types for product data
 type ProductItem = {
-  id: number;
+  _id: string;
   name: string;
-  price: string;
-  image: string;
-};
-
-type ProductsData = {
-  'cat-food': ProductItem[];
-  'cat-toys': ProductItem[];
-  'cat-grooming': ProductItem[];
-  'cat-beds': ProductItem[];
+  price: number;
+  imageUrl: string;
+  category: string;
+  subCategory: string;
+  description: string;
 };
 
 type CartItem = {
-    id: number;
-    name: string;
-    price: string;
-    image: string;
-  };
-  
-  type OrderItem = {
-    id: number;
-    name: string;
-    price: string;
-    image: string;
-  };
-// Define a type for product keys
-type ProductKey = keyof ProductsData;
-
-const productsData: ProductsData = {
-  'cat-food': [
-    { id: 1, name: 'Premium Beef cat Food', price: '$29.99', image: '/cat-food-item1.jpg' },
-    { id: 2, name: 'Chicken & Rice cat Food', price: '$24.99', image: '/cat-food-item2.jpg' },
-    // Add 8 more items
-  ],
-  'cat-toys': [
-    { id: 1, name: 'Chew Toy', price: '$12.99', image: '/cat-toy-item1.jpg' },
-    { id: 2, name: 'Fetch Ball', price: '$8.99', image: '/cat-toy-item2.jpg' },
-    // Add 8 more items
-  ],
-  'cat-grooming': [
-    { id: 1, name: 'cat Shampoo', price: '$14.99', image: '/cat-grooming-item1.jpg' },
-    { id: 2, name: 'Brush Set', price: '$19.99', image: '/cat-grooming-item2.jpg' },
-    // Add 8 more items
-  ],
-  'cat-beds': [
-    { id: 1, name: 'Orthopedic cat Bed', price: '$89.99', image: '/dog-beds-item1.jpg' },
-    { id: 2, name: 'Luxury cat Bed', price: '$99.99', image: '/dog-beds-item2.jpg' },
-    // Add 8 more items
-  ],
+  id: string;
+  name: string;
+  price: number;
+  image: string;
 };
 
-export default function DogSuppliesPage() {
-  const [selectedProduct, setSelectedProduct] = useState<ProductKey | null>(null);
-  const [quantities, setQuantities] = useState<{ [key: number]: number }>({});
+type OrderItem = {
+  id: string;
+  name: string;
+  price: number;
+  image: string;
+};
+
+export default function CatSuppliesPage() {
+  const [products, setProducts] = useState<ProductItem[]>([]);
+  const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
+  const [filteredProducts, setFilteredProducts] = useState<ProductItem[]>([]);
+  const [quantities, setQuantities] = useState<{ [key: string]: number }>({});
   const [cartVisible, setCartVisible] = useState(false);
   const [ordersVisible, setOrdersVisible] = useState(false);
 
-  // Explicitly type cartItems and orderItems
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
 
   useEffect(() => {
-    if (selectedProduct) {
-      const section = document.getElementById('dynamic-products');
-      section?.scrollIntoView({ behavior: 'smooth' });
+    async function fetchProducts() {
+      try {
+        const response = await fetch('http://localhost:5000/api/products');
+        const data = await response.json();
+        setProducts(data);
+      } catch (error) {
+        console.error('Error fetching products:', error);
+      }
     }
-  }, [selectedProduct]);
+    
+    fetchProducts();
+  }, []);
 
-  const handleViewMoreClick = (productType: ProductKey) => {
-    setSelectedProduct(productType);
+  useEffect(() => {
+    if (selectedProduct) {
+      const filtered = products.filter(product =>
+        product.subCategory === selectedProduct
+      );
+      setFilteredProducts(filtered);
+      scrollToDynamicProducts(); // Auto-scroll to dynamic section
+    }
+  }, [selectedProduct, products]);
+
+  const handleViewMoreClick = (subCategory: string) => {
+    setSelectedProduct(subCategory);
   };
 
   const handleCloseClick = () => {
     setSelectedProduct(null);
   };
 
-  const handleQuantityChange = (productId: number, newQuantity: number) => {
-    setQuantities((prevQuantities) => ({
+  const handleQuantityChange = (productId: string, newQuantity: number) => {
+    setQuantities(prevQuantities => ({
       ...prevQuantities,
       [productId]: newQuantity,
     }));
   };
 
-  const scrollToProducts = () => {
-    const section = document.getElementById('products');
+  const handleAddToCart = (product: ProductItem) => {
+    const newCartItem: CartItem = {
+      id: product._id,
+      name: product.name,
+      price: product.price,
+      image: product.imageUrl,
+    };
+    setCartItems(prevCartItems => [...prevCartItems, newCartItem]);
+  };
+
+  const scrollToDynamicProducts = () => {
+    const section = document.getElementById('dynamic-products');
     if (section) {
       section.scrollIntoView({ behavior: 'smooth' });
     }
@@ -112,7 +112,7 @@ export default function DogSuppliesPage() {
           <div className={styles.dropdown}>
             {cartItems.length > 0 ? (
               <ul>
-                {cartItems.map((item) => (
+                {cartItems.map(item => (
                   <li key={item.id} className={styles.dropdownItem}>
                     <Image src={item.image} alt={item.name} width={50} height={50} />
                     <span>{item.name}</span> - <span>{item.price}</span>
@@ -135,7 +135,7 @@ export default function DogSuppliesPage() {
           <div className={styles.dropdown}>
             {orderItems.length > 0 ? (
               <ul>
-                {orderItems.map((item) => (
+                {orderItems.map(item => (
                   <li key={item.id} className={styles.dropdownItem}>
                     <Image src={item.image} alt={item.name} width={50} height={50} />
                     <span>{item.name}</span> - <span>{item.price}</span>
@@ -176,7 +176,7 @@ export default function DogSuppliesPage() {
             />
             <button
               className="bg-yellow-500 text-black py-2 px-4 rounded-lg"
-              onClick={scrollToProducts}
+              onClick={() => document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' })}
             >
               Shop Now
             </button>
@@ -189,15 +189,15 @@ export default function DogSuppliesPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-2xl font-bold text-center mb-6">Our Products</h2>
           <div className="flex flex-wrap justify-between gap-6">
-            {['cat-food', 'cat-toys', 'cat-grooming', 'cat-beds'].map((productType) => (
-              <div key={productType} className={`${styles.productCategory} flex-1 max-w-xs`}>
-                <Image src={`/${productType}.jpg`} alt={productType} width={500} height={500} className="w-full h-48 object-cover" />
+            {['Cat Food', 'Cat Toys', 'Cat Grooming', 'Cat Beds and Accessories'].map((subCategory) => (
+              <div key={subCategory} className={`${styles.productCategory} flex-1 max-w-xs`}>
+                <Image src={`/${subCategory.replace(' ', '-').toLowerCase()}.jpg`} alt={subCategory} width={500} height={500} className="w-full h-48 object-cover" />
                 <div className="p-4">
-                  <h3 className="text-lg font-medium text-gray-900">{productType.replace('-', ' ').toUpperCase()}</h3>
-                  <p className="mt-2 text-gray-600">Description for {productType}</p>
+                  <h3 className="text-lg font-medium text-gray-900">{subCategory}</h3>
+                  <p className="mt-2 text-gray-600">Description for {subCategory}</p>
                   <button
                     className="text-blue-500 hover:underline"
-                    onClick={() => handleViewMoreClick(productType as ProductKey)}
+                    onClick={() => handleViewMoreClick(subCategory)}
                   >
                     View More
                   </button>
@@ -218,21 +218,37 @@ export default function DogSuppliesPage() {
             >
               Close
             </button>
-            <h2 className="text-2xl font-bold text-center mb-6">{selectedProduct.replace('-', ' ').toUpperCase()} Items</h2>
+            <h2 className="text-2xl font-bold text-center mb-6">
+              {selectedProduct} Items
+            </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {productsData[selectedProduct].map((item) => (
-                <div key={item.id} className={styles.productCard}>
-                  <Image src={item.image} alt={item.name} width={500} height={500} className={styles.productImage} />
-                  <div className={styles.productDetails}>
-                    <h3 className={styles.productName}>{item.name}</h3>
-                    <p className={styles.productPrice}>{item.price}</p>
-                    <div className={styles.productActions}>
-                      <button className={styles.addToCartButton}>Add to Cart</button>
-                      <button className={styles.buyNowButton}>Buy Now</button>
+              {filteredProducts.length > 0 ? (
+                filteredProducts.map(item => (
+                  <div key={item._id} className="bg-white shadow rounded-lg p-4">
+                    <Image src={item.imageUrl} alt={item.name} width={200} height={200} className="w-full h-48 object-cover mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900">{item.name}</h3>
+                    <p className="text-gray-600 mb-2">{item.description}</p>
+                    <div className="flex items-center justify-between">
+                      <span className="text-lg font-bold">${item.price.toFixed(2)}</span>
+                      <input
+                        type="number"
+                        min="1"
+                        value={quantities[item._id] || 1}
+                        onChange={(e) => handleQuantityChange(item._id, parseInt(e.target.value))}
+                        className="w-16 p-1 border rounded"
+                      />
+                      <button
+                        className="bg-blue-500 text-white py-2 px-4 rounded"
+                        onClick={() => handleAddToCart(item)}
+                      >
+                        Add to Cart
+                      </button>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))
+              ) : (
+                <p className="text-center text-gray-600">No products available.</p>
+              )}
             </div>
           </div>
         </section>

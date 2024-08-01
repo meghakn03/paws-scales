@@ -35,14 +35,18 @@ app.post('/api/upload', upload.single('image'), (req, res) => {
   }
   
   // Construct the file URL
-  const imageUrl = `http://localhost:5000/uploads/${req.file.filename}`;
+  const imageUrl = `http://localhost:${port}/uploads/${req.file.filename}`;
   
   res.json({ imageUrl });
 });
 
-// Include product routes
+// Include product routes under /api/products
 const productRoutes = require('./routes/productRoutes');
-app.use('/api', productRoutes);
+app.use('/api/products', productRoutes);
+
+// Include user routes under /api/users
+const userRoutes = require('./routes/userRoutes');
+app.use('/api/users', userRoutes);
 
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);

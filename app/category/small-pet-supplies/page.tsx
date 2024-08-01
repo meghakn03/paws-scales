@@ -10,59 +10,61 @@ type ProductItem = {
   id: number;
   name: string;
   price: string;
-  image: string;
-};
-
-type ProductsData = {
-  'reptile-food': ProductItem[];
-  'fish-bowl': ProductItem[];
+  imageUrl: string;
+  category?: string;
+  subCategory?: string;
 };
 
 type CartItem = {
-    id: number;
-    name: string;
-    price: string;
-    image: string;
-  };
-  
-  type OrderItem = {
-    id: number;
-    name: string;
-    price: string;
-    image: string;
-  };
-// Define a type for product keys
-type ProductKey = keyof ProductsData;
-
-const productsData: ProductsData = {
-  'reptile-food': [
-    { id: 1, name: 'Premium Beef cat Food', price: '$29.99', image: '/cat-food-item1.jpg' },
-    { id: 2, name: 'Chicken & Rice cat Food', price: '$24.99', image: '/cat-food-item2.jpg' },
-    // Add 8 more items
-  ],
-  'fish-bowl': [
-    { id: 1, name: 'Chew Toy', price: '$12.99', image: '/cat-toy-item1.jpg' },
-    { id: 2, name: 'Fetch Ball', price: '$8.99', image: '/cat-toy-item2.jpg' },
-    // Add 8 more items
-  ]
+  id: number;
+  name: string;
+  price: string;
+  image: string;
 };
+
+type OrderItem = {
+  id: number;
+  name: string;
+  price: string;
+  image: string;
+};
+
+type ProductKey = 'small-animal-food' | 'small-animal-cages';
 
 export default function DogSuppliesPage() {
   const [selectedProduct, setSelectedProduct] = useState<ProductKey | null>(null);
+  const [products, setProducts] = useState<ProductItem[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<ProductItem[]>([]);
   const [quantities, setQuantities] = useState<{ [key: number]: number }>({});
   const [cartVisible, setCartVisible] = useState(false);
   const [ordersVisible, setOrdersVisible] = useState(false);
 
-  // Explicitly type cartItems and orderItems
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
 
   useEffect(() => {
+    fetch('http://localhost:5000/api/products')
+      .then(response => response.json())
+      .then(data => {
+        setProducts(data);
+      })
+      .catch(error => console.error('Error fetching products:', error));
+  }, []);
+  
+  useEffect(() => {
     if (selectedProduct) {
       const section = document.getElementById('dynamic-products');
       section?.scrollIntoView({ behavior: 'smooth' });
+
+      let filtered: ProductItem[] = [];
+      if (selectedProduct === 'small-animal-food') {
+        filtered = products.filter(product => product.subCategory === 'Small Animal Food');
+      } else if (selectedProduct === 'small-animal-cages') {
+        filtered = products.filter(product => product.subCategory === 'Small Animal Beds'); // Corrected from 'category' to 'subCategory'
+      }
+      setFilteredProducts(filtered);
     }
-  }, [selectedProduct]);
+  }, [selectedProduct, products]);
 
   const handleViewMoreClick = (productType: ProductKey) => {
     setSelectedProduct(productType);
@@ -73,7 +75,7 @@ export default function DogSuppliesPage() {
   };
 
   const handleQuantityChange = (productId: number, newQuantity: number) => {
-    setQuantities((prevQuantities) => ({
+    setQuantities(prevQuantities => ({
       ...prevQuantities,
       [productId]: newQuantity,
     }));
@@ -100,7 +102,7 @@ export default function DogSuppliesPage() {
           <div className={styles.dropdown}>
             {cartItems.length > 0 ? (
               <ul>
-                {cartItems.map((item) => (
+                {cartItems.map(item => (
                   <li key={item.id} className={styles.dropdownItem}>
                     <Image src={item.image} alt={item.name} width={50} height={50} />
                     <span>{item.name}</span> - <span>{item.price}</span>
@@ -123,7 +125,7 @@ export default function DogSuppliesPage() {
           <div className={styles.dropdown}>
             {orderItems.length > 0 ? (
               <ul>
-                {orderItems.map((item) => (
+                {orderItems.map(item => (
                   <li key={item.id} className={styles.dropdownItem}>
                     <Image src={item.image} alt={item.name} width={50} height={50} />
                     <span>{item.name}</span> - <span>{item.price}</span>
@@ -171,13 +173,13 @@ export default function DogSuppliesPage() {
           </div>
         </div>
       </section>
-      
+
       {/* Our Products Section */}
       <section id="products" className="py-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-2xl font-bold text-center mb-6">Our Products</h2>
           <div className="flex flex-wrap justify-between gap-6">
-            {['reptile-food', 'fish-bowl'].map((productType) => (
+            {['small-animal-food', 'small-animal-cages'].map(productType => (
               <div key={productType} className={`${styles.productCategory} flex-1 max-w-xs`}>
                 <Image src={`/${productType}.jpg`} alt={productType} width={500} height={500} className="w-full h-48 object-cover" />
                 <div className="p-4">
@@ -208,19 +210,40 @@ export default function DogSuppliesPage() {
             </button>
             <h2 className="text-2xl font-bold text-center mb-6">{selectedProduct.replace('-', ' ').toUpperCase()} Items</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {productsData[selectedProduct].map((item) => (
-                <div key={item.id} className={styles.productCard}>
-                  <Image src={item.image} alt={item.name} width={500} height={500} className={styles.productImage} />
-                  <div className={styles.productDetails}>
-                    <h3 className={styles.productName}>{item.name}</h3>
-                    <p className={styles.productPrice}>{item.price}</p>
-                    <div className={styles.productActions}>
-                      <button className={styles.addToCartButton}>Add to Cart</button>
-                      <button className={styles.buyNowButton}>Buy Now</button>
+              {filteredProducts.length > 0 ? (
+                filteredProducts.map(product => (
+                  <div key={product.id} className="bg-white p-4 rounded-lg shadow-md">
+                    <Image
+                      src={product.imageUrl}
+                      alt={product.name}
+                      width={200}
+                      height={200}
+                      className="w-full h-32 object-cover"
+                    />
+                    <h3 className="text-lg font-medium mt-4">{product.name}</h3>
+                    <p className="text-gray-600 mt-2">${product.price}</p>
+                    <div className="mt-4 flex items-center">
+                      <button
+                        className="bg-blue-500 text-white py-2 px-4 rounded-lg"
+                        onClick={() => handleQuantityChange(product.id, (quantities[product.id] || 0) + 1)}
+                      >
+                        Add to Cart
+                      </button>
+                      <input
+                        type="number"
+                        value={quantities[product.id] || 0}
+                        onChange={(e) => handleQuantityChange(product.id, parseInt(e.target.value) || 0)}
+                        className="ml-4 w-16 p-2 border border-gray-300 rounded"
+                      />
                     </div>
                   </div>
+                ))
+              ) : (
+                <div className="text-center">
+                  <FontAwesomeIcon icon={faSadTear} size="lg" />
+                  <p>No Products Found</p>
                 </div>
-              ))}
+              )}
             </div>
           </div>
         </section>

@@ -7,76 +7,93 @@ import { faShoppingCart, faClipboardList, faSadTear } from '@fortawesome/free-so
 import styles from '../../page.module.css';
 
 type ProductItem = {
-  id: number;
+  _id: string;
   name: string;
-  price: string;
-  image: string;
-};
-
-type ProductsData = {
-  'reptile-food': ProductItem[];
-  'fish-bowl': ProductItem[];
+  price: number;
+  imageUrl: string;
+  subCategory: string;
 };
 
 type CartItem = {
-    id: number;
-    name: string;
-    price: string;
-    image: string;
-  };
-  
-  type OrderItem = {
-    id: number;
-    name: string;
-    price: string;
-    image: string;
-  };
-// Define a type for product keys
-type ProductKey = keyof ProductsData;
-
-const productsData: ProductsData = {
-  'reptile-food': [
-    { id: 1, name: 'Premium Beef cat Food', price: '$29.99', image: '/cat-food-item1.jpg' },
-    { id: 2, name: 'Chicken & Rice cat Food', price: '$24.99', image: '/cat-food-item2.jpg' },
-    // Add 8 more items
-  ],
-  'fish-bowl': [
-    { id: 1, name: 'Chew Toy', price: '$12.99', image: '/cat-toy-item1.jpg' },
-    { id: 2, name: 'Fetch Ball', price: '$8.99', image: '/cat-toy-item2.jpg' },
-    // Add 8 more items
-  ]
+  id: string;
+  name: string;
+  price: number;
+  image: string;
 };
 
-export default function DogSuppliesPage() {
-  const [selectedProduct, setSelectedProduct] = useState<ProductKey | null>(null);
-  const [quantities, setQuantities] = useState<{ [key: number]: number }>({});
+type OrderItem = {
+  id: string;
+  name: string;
+  price: number;
+  image: string;
+};
+
+const fetchProducts = async () => {
+  const response = await fetch('http://localhost:5000/api/products');
+  const data = await response.json();
+  return data;
+};
+
+export default function ReptileSuppliesPage() {
+  const [products, setProducts] = useState<ProductItem[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<ProductItem[]>([]);
+  const [selectedSubCategory, setSelectedSubCategory] = useState<string | null>(null);
+  const [quantities, setQuantities] = useState<{ [key: string]: number }>({});
   const [cartVisible, setCartVisible] = useState(false);
   const [ordersVisible, setOrdersVisible] = useState(false);
 
-  // Explicitly type cartItems and orderItems
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
 
   useEffect(() => {
-    if (selectedProduct) {
+    fetchProducts()
+      .then((data) => setProducts(data))
+      .catch((error) => console.error('Error fetching products:', error));
+  }, []);
+
+  useEffect(() => {
+    if (selectedSubCategory) {
       const section = document.getElementById('dynamic-products');
       section?.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [selectedProduct]);
 
-  const handleViewMoreClick = (productType: ProductKey) => {
-    setSelectedProduct(productType);
+      const filtered = products.filter((product) => product.subCategory === selectedSubCategory);
+      setFilteredProducts(filtered);
+    }
+  }, [selectedSubCategory, products]);
+
+  const handleViewMoreClick = (subCategory: string) => {
+    setSelectedSubCategory(subCategory);
   };
 
   const handleCloseClick = () => {
-    setSelectedProduct(null);
+    setSelectedSubCategory(null);
   };
 
-  const handleQuantityChange = (productId: number, newQuantity: number) => {
+  const handleQuantityChange = (productId: string, newQuantity: number) => {
     setQuantities((prevQuantities) => ({
       ...prevQuantities,
       [productId]: newQuantity,
     }));
+  };
+
+  const handleAddToCart = (item: ProductItem) => {
+    const newCartItem: CartItem = {
+      id: item._id,
+      name: item.name,
+      price: item.price,
+      image: item.imageUrl,
+    };
+
+    setCartItems((prevCartItems) => {
+      const itemExists = prevCartItems.find((cartItem) => cartItem.id === item._id);
+      if (itemExists) {
+        return prevCartItems.map((cartItem) =>
+          cartItem.id === item._id ? newCartItem : cartItem
+        );
+      } else {
+        return [...prevCartItems, newCartItem];
+      }
+    });
   };
 
   const scrollToProducts = () => {
@@ -103,7 +120,7 @@ export default function DogSuppliesPage() {
                 {cartItems.map((item) => (
                   <li key={item.id} className={styles.dropdownItem}>
                     <Image src={item.image} alt={item.name} width={50} height={50} />
-                    <span>{item.name}</span> - <span>{item.price}</span>
+                    <span>{item.name}</span> - <span>${item.price}</span>
                   </li>
                 ))}
               </ul>
@@ -126,7 +143,7 @@ export default function DogSuppliesPage() {
                 {orderItems.map((item) => (
                   <li key={item.id} className={styles.dropdownItem}>
                     <Image src={item.image} alt={item.name} width={50} height={50} />
-                    <span>{item.name}</span> - <span>{item.price}</span>
+                    <span>{item.name}</span> - <span>${item.price}</span>
                   </li>
                 ))}
               </ul>
@@ -154,7 +171,7 @@ export default function DogSuppliesPage() {
         <div className="relative z-10 flex flex-col items-center justify-center h-full p-4">
           <div className="text-center text-white mb-8">
             <h1 className="text-4xl font-bold mb-4">Top Reptile Supplies</h1>
-            <p className="text-lg">Find everything you need for your scaley friend.</p>
+            <p className="text-lg">Find everything you need for your scaly friend.</p>
           </div>
           <div className="flex gap-4">
             <input
@@ -177,15 +194,15 @@ export default function DogSuppliesPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-2xl font-bold text-center mb-6">Our Products</h2>
           <div className="flex flex-wrap justify-between gap-6">
-            {['reptile-food', 'fish-bowl'].map((productType) => (
+            {['Reptile Food', 'Reptile Habitats'].map((productType) => (
               <div key={productType} className={`${styles.productCategory} flex-1 max-w-xs`}>
-                <Image src={`/${productType}.jpg`} alt={productType} width={500} height={500} className="w-full h-48 object-cover" />
+                <Image src={`/images/${productType}.jpg`} alt={productType} width={500} height={500} className="w-full h-48 object-cover" />
                 <div className="p-4">
-                  <h3 className="text-lg font-medium text-gray-900">{productType.replace('-', ' ').toUpperCase()}</h3>
+                  <h3 className="text-lg font-medium text-gray-900">{productType}</h3>
                   <p className="mt-2 text-gray-600">Description for {productType}</p>
                   <button
                     className="text-blue-500 hover:underline"
-                    onClick={() => handleViewMoreClick(productType as ProductKey)}
+                    onClick={() => handleViewMoreClick(productType)}
                   >
                     View More
                   </button>
@@ -195,9 +212,9 @@ export default function DogSuppliesPage() {
           </div>
         </div>
       </section>
-
+      
       {/* Dynamic Products Section */}
-      {selectedProduct && (
+      {selectedSubCategory && (
         <section id="dynamic-products" className="py-10">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <button
@@ -206,21 +223,28 @@ export default function DogSuppliesPage() {
             >
               Close
             </button>
-            <h2 className="text-2xl font-bold text-center mb-6">{selectedProduct.replace('-', ' ').toUpperCase()} Items</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {productsData[selectedProduct].map((item) => (
-                <div key={item.id} className={styles.productCard}>
-                  <Image src={item.image} alt={item.name} width={500} height={500} className={styles.productImage} />
-                  <div className={styles.productDetails}>
-                    <h3 className={styles.productName}>{item.name}</h3>
-                    <p className={styles.productPrice}>{item.price}</p>
-                    <div className={styles.productActions}>
-                      <button className={styles.addToCartButton}>Add to Cart</button>
-                      <button className={styles.buyNowButton}>Buy Now</button>
-                    </div>
+            <h2 className="text-2xl font-bold text-center mb-6">{selectedSubCategory}</h2>
+            <div className="flex flex-wrap gap-6">
+              {filteredProducts.length > 0 ? (
+                filteredProducts.map((product) => (
+                  <div key={product._id} className="flex flex-col items-center bg-white p-4 rounded-lg shadow-md">
+                    <Image src={product.imageUrl} alt={product.name} width={200} height={200} className="w-full h-48 object-cover mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900">{product.name}</h3>
+                    <p className="mt-2 text-gray-600">${product.price.toFixed(2)}</p>
+                    <button
+                      className="mt-4 bg-blue-500 text-white py-2 px-4 rounded-lg"
+                      onClick={() => handleAddToCart(product)}
+                    >
+                      Add to Cart
+                    </button>
                   </div>
+                ))
+              ) : (
+                <div className="text-center w-full py-10">
+                  <FontAwesomeIcon icon={faSadTear} size="lg" />
+                  <p className="mt-2 text-gray-600">No products found</p>
                 </div>
-              ))}
+              )}
             </div>
           </div>
         </section>

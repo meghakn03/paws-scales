@@ -1,4 +1,6 @@
 const Product = require('../models/Product');
+const User = require('../models/User');
+
 
 const getAllProducts = async (req, res) => {
   try {
@@ -40,12 +42,9 @@ const getProductById = async (req, res) => {
 
 const createProduct = async (req, res) => {
   const { name, description, price, category, subCategory, imageUrl, quantity, userId } = req.body;
-
-  if (!userId) {
-    return res.status(400).json({ message: 'User ID is required' });
-  }
-
+  
   try {
+    // Create new product
     const newProduct = new Product({
       name,
       description,
@@ -54,9 +53,16 @@ const createProduct = async (req, res) => {
       subCategory,
       imageUrl,
       quantity,
-      user: userId  // Associate product with the user
+      user: userId // Reference to the user who listed the product
     });
+    
     const savedProduct = await newProduct.save();
+
+    // Update user's products array
+    await User.findByIdAndUpdate(userId, {
+      $push: { products: savedProduct._id }
+    });
+
     res.status(201).json(savedProduct);
   } catch (error) {
     res.status(500).json({ message: error.message });

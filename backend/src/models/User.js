@@ -6,7 +6,7 @@ const userSchema = new mongoose.Schema({
   password: { type: String, required: true }, // Make sure to hash passwords before saving
   cart: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Product' }], // Array of product references
   orders: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Order' }], // Array of order references
-  products: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Product' }] // Products listed by the user
+  products: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Product' }]
 });
 
 const User = mongoose.model('User', userSchema);

@@ -31,8 +31,10 @@ type OrderItem = {
 };
 
 const categories = [
-  { name: 'Bird Food', value: 'Bird Food' },
   { name: 'Bird Cages', value: 'Bird Cages' },
+  { name: 'Bird Food', value: 'Bird Food' },
+  { name: 'Bird Toys', value: 'Bird Toys' },
+  { name: 'Bird Accessories', value: 'Bird Accessories' },
 ];
 
 export default function BirdSuppliesPage() {
@@ -47,31 +49,48 @@ export default function BirdSuppliesPage() {
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/products')
-      .then(response => {
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.json();
-      })
-      .then(data => {
-        setProducts(data);
-      })
-      .catch(error => console.error('Error fetching products:', error));
+    fetchProducts();
   }, []);
 
   useEffect(() => {
     if (selectedProduct) {
-      const filtered = products.filter(product =>
-        product.subCategory === selectedProduct
-      );
-      setFilteredProducts(filtered);
-      scrollToDynamicProducts(); // Auto-scroll to dynamic section
+      fetchFilteredProducts(selectedProduct);
     }
-  }, [selectedProduct, products]);
+  }, [selectedProduct]);
 
-  const handleViewMoreClick = (category: string) => {
-    setSelectedProduct(category);
+  const fetchProducts = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/products');
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      setProducts(data);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+    }
+  };
+
+  const fetchFilteredProducts = async (subCategory: string) => {
+    try {
+      const response = await fetch('http://localhost:5000/api/products/products/by-category', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          category: 'Bird Supplies',
+          subCategory: subCategory,
+        }),
+      });
+      const data = await response.json();
+      setFilteredProducts(data);
+      scrollToDynamicProducts(); // Auto-scroll to dynamic section
+    } catch (error) {
+      console.error('Error fetching filtered products:', error);
+    }
+  };
+
+  const handleViewMoreClick = (subCategory: string) => {
+    setSelectedProduct(subCategory);
   };
 
   const handleCloseClick = () => {
@@ -195,7 +214,7 @@ export default function BirdSuppliesPage() {
           <div className="flex flex-wrap justify-between gap-6">
             {categories.map(category => (
               <div key={category.value} className={`${styles.productCategory} flex-1 max-w-xs`}>
-                <Image src={`/${category.value}.jpg`} alt={category.name} width={500} height={500} className="w-full h-48 object-cover" />
+                <Image src={`/${category.value.replace(' ', '-').toLowerCase()}.jpg`} alt={category.name} width={500} height={500} className="w-full h-48 object-cover" />
                 <div className="p-4">
                   <h3 className="text-lg font-medium text-gray-900">{category.name}</h3>
                   <p className="mt-2 text-gray-600">Description for {category.name}</p>
@@ -222,7 +241,7 @@ export default function BirdSuppliesPage() {
             >
               Close
             </button>
-            <h2 className="text-2xl font-bold text-center mb-6">{selectedProduct.replace('-', ' ').toUpperCase()} Items</h2>
+            <h2 className="text-2xl font-bold text-center mb-6">{selectedProduct} Items</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
               {filteredProducts.length > 0 ? (
                 filteredProducts.map(product => (

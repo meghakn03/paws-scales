@@ -43,28 +43,42 @@ export default function CatSuppliesPage() {
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
 
   useEffect(() => {
-    async function fetchProducts() {
-      try {
-        const response = await fetch('http://localhost:5000/api/products');
-        const data = await response.json();
-        setProducts(data);
-      } catch (error) {
-        console.error('Error fetching products:', error);
-      }
-    }
-    
     fetchProducts();
   }, []);
 
   useEffect(() => {
     if (selectedProduct) {
-      const filtered = products.filter(product =>
-        product.subCategory === selectedProduct
-      );
-      setFilteredProducts(filtered);
-      scrollToDynamicProducts(); // Auto-scroll to dynamic section
+      fetchFilteredProducts();
     }
-  }, [selectedProduct, products]);
+  }, [selectedProduct]);
+
+  const fetchProducts = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/products/products');
+      const data = await response.json();
+      setProducts(data);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+    }
+  };
+
+  const fetchFilteredProducts = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/products/products/by-category', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          category: 'Cat Supplies',
+          subCategory: selectedProduct,
+        }),
+      });
+      const data = await response.json();
+      setFilteredProducts(data);
+      scrollToDynamicProducts(); // Auto-scroll to dynamic section
+    } catch (error) {
+      console.error('Error fetching filtered products:', error);
+    }
+  };
 
   const handleViewMoreClick = (subCategory: string) => {
     setSelectedProduct(subCategory);
@@ -166,7 +180,7 @@ export default function CatSuppliesPage() {
         <div className="relative z-10 flex flex-col items-center justify-center h-full p-4">
           <div className="text-center text-white mb-8">
             <h1 className="text-4xl font-bold mb-4">Top Cat Supplies</h1>
-            <p className="text-lg">Find everything you need for your furry friend.</p>
+            <p className="text-lg">Find everything you need for your feline friend.</p>
           </div>
           <div className="flex gap-4">
             <input

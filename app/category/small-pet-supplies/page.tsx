@@ -31,7 +31,29 @@ type OrderItem = {
 
 type ProductKey = 'small-animal-food' | 'small-animal-cages';
 
-export default function DogSuppliesPage() {
+const fetchProducts = async () => {
+  const response = await fetch('http://localhost:5000/api/products/products');
+  const data = await response.json();
+  return data;
+};
+
+const fetchFilteredProducts = async (subCategory: string) => {
+  try {
+    const response = await fetch('http://localhost:5000/api/products/products/by-category', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ category: 'Small Animals', subCategory }),
+    });
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error fetching filtered products:', error);
+    return [];
+  }
+};
+
+export default function SmallAnimalSuppliesPage() {
   const [selectedProduct, setSelectedProduct] = useState<ProductKey | null>(null);
   const [products, setProducts] = useState<ProductItem[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<ProductItem[]>([]);
@@ -43,28 +65,24 @@ export default function DogSuppliesPage() {
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/products')
-      .then(response => response.json())
-      .then(data => {
-        setProducts(data);
-      })
+    fetchProducts()
+      .then(data => setProducts(data))
       .catch(error => console.error('Error fetching products:', error));
   }, []);
-  
+
   useEffect(() => {
     if (selectedProduct) {
-      const section = document.getElementById('dynamic-products');
-      section?.scrollIntoView({ behavior: 'smooth' });
+      const subCategoryMap: { [key in ProductKey]: string } = {
+        'small-animal-food': 'Small Animal Food',
+        'small-animal-cages': 'Small Animal Beds',
+      };
+      const subCategory = subCategoryMap[selectedProduct];
 
-      let filtered: ProductItem[] = [];
-      if (selectedProduct === 'small-animal-food') {
-        filtered = products.filter(product => product.subCategory === 'Small Animal Food');
-      } else if (selectedProduct === 'small-animal-cages') {
-        filtered = products.filter(product => product.subCategory === 'Small Animal Beds'); // Corrected from 'category' to 'subCategory'
-      }
-      setFilteredProducts(filtered);
+      fetchFilteredProducts(subCategory)
+        .then(data => setFilteredProducts(data))
+        .catch(error => console.error('Error fetching filtered products:', error));
     }
-  }, [selectedProduct, products]);
+  }, [selectedProduct]);
 
   const handleViewMoreClick = (productType: ProductKey) => {
     setSelectedProduct(productType);

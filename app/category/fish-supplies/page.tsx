@@ -10,36 +10,31 @@ type ProductItem = {
   id: number;
   name: string;
   price: string;
-  image: string;
-};
-
-type ProductsData = {
-  id: number;
-  name: string;
-  price: string;
   imageUrl: string;
   category: string;
-  subCategory: string; // Added subCategory field
+  subCategory: string;
 };
 
 type CartItem = {
   id: number;
   name: string;
   price: string;
-  imageUrl: string; // Changed from 'image' to 'imageUrl'
+  imageUrl: string;
 };
 
 type OrderItem = {
   id: number;
   name: string;
   price: string;
-  imageUrl: string; // Changed from 'image' to 'imageUrl'
+  imageUrl: string;
 };
 
+const subCategories = ['Fish Tanks', 'Fish Food', 'Fish Toys', 'Fish Filters'];
+
 export default function FishSuppliesPage() {
-  const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
-  const [products, setProducts] = useState<ProductsData[]>([]);
-  const [filteredProducts, setFilteredProducts] = useState<ProductsData[]>([]);
+  const [selectedSubCategory, setSelectedSubCategory] = useState<string | null>(null);
+  const [products, setProducts] = useState<ProductItem[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<ProductItem[]>([]);
   const [quantities, setQuantities] = useState<{ [key: number]: number }>({});
   const [cartVisible, setCartVisible] = useState(false);
   const [ordersVisible, setOrdersVisible] = useState(false);
@@ -48,28 +43,55 @@ export default function FishSuppliesPage() {
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/products')
-      .then((response) => response.json())
-      .then((data) => setProducts(data))
-      .catch((error) => console.error('Error fetching products:', error));
+    fetchProducts();
   }, []);
 
   useEffect(() => {
-    if (selectedProduct) {
-      const section = document.getElementById('dynamic-products');
-      section?.scrollIntoView({ behavior: 'smooth' });
-
-      const filtered = products.filter((product) => product.subCategory === selectedProduct); // Filter by subCategory
-      setFilteredProducts(filtered);
+    if (selectedSubCategory) {
+      fetchFilteredProducts(selectedSubCategory);
     }
-  }, [selectedProduct, products]);
+  }, [selectedSubCategory]);
+
+  const fetchProducts = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/products/products');
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      setProducts(data);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+    }
+  };
+
+  const fetchFilteredProducts = async (subCategory: string) => {
+    try {
+      const response = await fetch('http://localhost:5000/api/products/products/by-category', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          category: 'Fish Supplies',
+          subCategory: subCategory,
+        }),
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      setFilteredProducts(data);
+      scrollToDynamicProducts(); // Auto-scroll to dynamic section
+    } catch (error) {
+      console.error('Error fetching filtered products:', error);
+    }
+  };
 
   const handleViewMoreClick = (subCategory: string) => {
-    setSelectedProduct(subCategory);
+    setSelectedSubCategory(subCategory);
   };
 
   const handleCloseClick = () => {
-    setSelectedProduct(null);
+    setSelectedSubCategory(null);
   };
 
   const handleQuantityChange = (productId: number, newQuantity: number) => {
@@ -79,7 +101,7 @@ export default function FishSuppliesPage() {
     }));
   };
 
-  const handleAddToCart = (product: ProductsData) => {
+  const handleAddToCart = (product: ProductItem) => {
     const quantity = quantities[product.id] || 1;
     setCartItems((prevCartItems) => [
       ...prevCartItems,
@@ -89,6 +111,13 @@ export default function FishSuppliesPage() {
 
   const scrollToProducts = () => {
     const section = document.getElementById('products');
+    if (section) {
+      section.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  const scrollToDynamicProducts = () => {
+    const section = document.getElementById('dynamic-products');
     if (section) {
       section.scrollIntoView({ behavior: 'smooth' });
     }
@@ -185,15 +214,15 @@ export default function FishSuppliesPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-2xl font-bold text-center mb-6">Our Products</h2>
           <div className="flex flex-wrap justify-between gap-6">
-            {['Fish Food', 'Fish Tanks'].map((productType) => (
-              <div key={productType} className={`${styles.productCategory} flex-1 max-w-xs`}>
-                <Image src={`/${productType.toLowerCase().replace(' ', '-')}.jpg`} alt={productType} width={500} height={500} className="w-full h-48 object-cover" />
+            {subCategories.map((subCategory) => (
+              <div key={subCategory} className={`${styles.productCategory} flex-1 max-w-xs`}>
+                <Image src={`/${subCategory.toLowerCase().replace(' ', '-')}.jpg`} alt={subCategory} width={500} height={500} className="w-full h-48 object-cover" />
                 <div className="p-4">
-                  <h3 className="text-lg font-medium text-gray-900">{productType}</h3>
-                  <p className="mt-2 text-gray-600">Description for {productType}</p>
+                  <h3 className="text-lg font-medium text-gray-900">{subCategory}</h3>
+                  <p className="mt-2 text-gray-600">Description for {subCategory}</p>
                   <button
                     className="text-blue-500 hover:underline"
-                    onClick={() => handleViewMoreClick(productType)}
+                    onClick={() => handleViewMoreClick(subCategory)}
                   >
                     View More
                   </button>
@@ -205,7 +234,7 @@ export default function FishSuppliesPage() {
       </section>
 
       {/* Dynamic Products Section */}
-      {selectedProduct && (
+      {selectedSubCategory && (
         <section id="dynamic-products" className="py-10">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <button
@@ -214,7 +243,7 @@ export default function FishSuppliesPage() {
             >
               Close
             </button>
-            <h2 className="text-2xl font-bold text-center mb-6">{selectedProduct} Items</h2>
+            <h2 className="text-2xl font-bold text-center mb-6">{selectedSubCategory} Items</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {filteredProducts.length > 0 ? (
                 filteredProducts.map((product) => (

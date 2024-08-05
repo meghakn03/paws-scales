@@ -12,21 +12,29 @@ const getAllProducts = async (req, res) => {
 };
 
 const getProductsByCategoryAndSubCategory = async (req, res) => {
-  const { category, subCategory } = req.query;
+  const { category, subCategory } = req.body;
 
   if (!category || !subCategory) {
     return res.status(400).json({ message: 'Category and subCategory are required' });
   }
 
   try {
-    // Fetch products by category and subCategory
-    const products = await Product.find({ category, subCategory });
+    const products = await Product.find({
+      category: category,
+      subCategory: subCategory
+    });
+
+    if (products.length === 0) {
+      return res.status(404).json({ message: 'No products found' });
+    }
+
     res.json(products);
   } catch (error) {
     console.error('Error fetching products:', error);
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: 'Internal Server Error' });
   }
 };
+
 
 const getProductById = async (req, res) => {
   try {

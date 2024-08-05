@@ -49,7 +49,7 @@ export default function DogSuppliesPage() {
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/products')
+    fetch('http://localhost:5000/api/products/products')
       .then(response => {
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -64,16 +64,32 @@ export default function DogSuppliesPage() {
   
   useEffect(() => {
     if (selectedProduct) {
-      const filtered = products.filter(product =>
-        product.subCategory === selectedProduct
-      );
-      setFilteredProducts(filtered);
-      scrollToDynamicProducts(); // Auto-scroll to dynamic section
+      fetch('http://localhost:5000/api/products/products/by-category', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          category: 'Dog Supplies',
+          subCategory: selectedProduct,
+        }),
+      })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          return response.json();
+        })
+        .then(data => {
+          setFilteredProducts(data);
+          scrollToDynamicProducts(); // Auto-scroll to dynamic section
+        })
+        .catch(error => console.error('Error fetching filtered products:', error));
     }
-  }, [selectedProduct, products]);
+  }, [selectedProduct]);
 
-  const handleViewMoreClick = (category: string) => {
-    setSelectedProduct(category);
+  const handleViewMoreClick = (subCategory: string) => {
+    setSelectedProduct(subCategory);
   };
 
   const handleCloseClick = () => {

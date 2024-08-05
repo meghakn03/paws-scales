@@ -29,9 +29,25 @@ type OrderItem = {
 };
 
 const fetchProducts = async () => {
-  const response = await fetch('http://localhost:5000/api/products');
+  const response = await fetch('http://localhost:5000/api/products/products');
   const data = await response.json();
   return data;
+};
+
+const fetchFilteredProducts = async (subCategory: string) => {
+  try {
+    const response = await fetch('http://localhost:5000/api/products/products/by-category', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ category: 'Reptiles', subCategory }),
+    });
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error fetching filtered products:', error);
+    return [];
+  }
 };
 
 export default function ReptileSuppliesPage() {
@@ -56,10 +72,11 @@ export default function ReptileSuppliesPage() {
       const section = document.getElementById('dynamic-products');
       section?.scrollIntoView({ behavior: 'smooth' });
 
-      const filtered = products.filter((product) => product.subCategory === selectedSubCategory);
-      setFilteredProducts(filtered);
+      fetchFilteredProducts(selectedSubCategory)
+        .then((data) => setFilteredProducts(data))
+        .catch((error) => console.error('Error fetching filtered products:', error));
     }
-  }, [selectedSubCategory, products]);
+  }, [selectedSubCategory]);
 
   const handleViewMoreClick = (subCategory: string) => {
     setSelectedSubCategory(subCategory);
@@ -188,21 +205,21 @@ export default function ReptileSuppliesPage() {
           </div>
         </div>
       </section>
-      
+
       {/* Our Products Section */}
       <section id="products" className="py-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-2xl font-bold text-center mb-6">Our Products</h2>
           <div className="flex flex-wrap justify-between gap-6">
-            {['Reptile Food', 'Reptile Habitats'].map((productType) => (
-              <div key={productType} className={`${styles.productCategory} flex-1 max-w-xs`}>
-                <Image src={`/images/${productType}.jpg`} alt={productType} width={500} height={500} className="w-full h-48 object-cover" />
+            {['Reptile Habitats', 'Reptile Food', 'Reptile Toys', 'Reptile Bedding'].map((subCategory) => (
+              <div key={subCategory} className={`${styles.productCategory} flex-1 max-w-xs`}>
+                <Image src={`/images/${subCategory.toLowerCase().replace(/ /g, '-')}.jpg`} alt={subCategory} width={500} height={500} className="w-full h-48 object-cover" />
                 <div className="p-4">
-                  <h3 className="text-lg font-medium text-gray-900">{productType}</h3>
-                  <p className="mt-2 text-gray-600">Description for {productType}</p>
+                  <h3 className="text-lg font-medium text-gray-900">{subCategory}</h3>
+                  <p className="mt-2 text-gray-600">Description for {subCategory}</p>
                   <button
                     className="text-blue-500 hover:underline"
-                    onClick={() => handleViewMoreClick(productType)}
+                    onClick={() => handleViewMoreClick(subCategory)}
                   >
                     View More
                   </button>
@@ -212,7 +229,7 @@ export default function ReptileSuppliesPage() {
           </div>
         </div>
       </section>
-      
+
       {/* Dynamic Products Section */}
       {selectedSubCategory && (
         <section id="dynamic-products" className="py-10">

@@ -13,7 +13,7 @@ router.get('/products/:id', getProductById);
 router.post('/products', createProduct);
 
 // Route to get products by category and subCategory
-router.get('/products/filter', getProductsByCategoryAndSubCategory);
+router.post('/products/by-category', getProductsByCategoryAndSubCategory);
 
 // Route to get products by a list of IDs
 router.post('/products/by-ids', getProductsByIds);

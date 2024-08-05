@@ -2,6 +2,7 @@ import { useState } from 'react';
 import axios from 'axios';
 import styles from './SellProductModal.module.css'; // Ensure this path is correct
 import { useAuth } from '../contexts/AuthContext';
+import { useProduct } from '../contexts/ProductContext';
 
 interface SellProductModalProps {
   isOpen: boolean;
@@ -13,7 +14,8 @@ type SubCategories = {
 };
 
 const SellProductModal: React.FC<SellProductModalProps> = ({ isOpen, onClose }) => {
-  const { user } = useAuth(); // Access user from context
+  const { user, setUser } = useAuth(); // Access user from context
+  const { setProductsUpdated } = useProduct();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState<number | string>('');
@@ -59,12 +61,21 @@ const SellProductModal: React.FC<SellProductModalProps> = ({ isOpen, onClose }) 
     };
 
     try {
-      await axios.post('http://localhost:5000/api/products/products', productData, {
+      const response = await axios.post('http://localhost:5000/api/products/products', productData, {
         headers: {
           'Content-Type': 'application/json',
         },
       });
+
+      const newProduct = response.data; // Assuming the response includes the new product data
+      setUser(prevUser => prevUser ? {
+        ...prevUser,
+        products: [...prevUser.products, newProduct._id]
+      } : null);
+      
       alert('Product added to the database!');
+      setProductsUpdated(true);
+      onClose(); // Close the modal after successful upload
     } catch (error) {
       console.error('Error submitting product:', error);
       alert('Failed to add product');
@@ -140,12 +151,9 @@ const SellProductModal: React.FC<SellProductModalProps> = ({ isOpen, onClose }) 
               required
             >
               <option value="">Select a category</option>
-              <option value="Dog Supplies">Dog Supplies</option>
-              <option value="Cat Supplies">Cat Supplies</option>
-              <option value="Small Animals">Small Animals</option>
-              <option value="Reptiles">Reptiles</option>
-              <option value="Fish Supplies">Fish Supplies</option>
-              <option value="Bird Supplies">Bird Supplies</option>
+              {Object.keys(subCategories).map((cat) => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
             </select>
           </div>
           <div className={styles.formGroup}>
@@ -158,7 +166,7 @@ const SellProductModal: React.FC<SellProductModalProps> = ({ isOpen, onClose }) 
               disabled={!category} // Disable if no category is selected
             >
               <option value="">Select a sub-category</option>
-              {category && subCategories[category]?.map((sub: string, index: number) => (
+              {category && subCategories[category]?.map((sub, index) => (
                 <option key={index} value={sub}>{sub}</option>
               ))}
             </select>

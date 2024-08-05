@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import styles from './YourProductsModal.module.css';
 import { useAuth } from '../contexts/AuthContext'; // Assuming you have an AuthContext
+import { useProduct } from '../contexts/ProductContext'; // Import useProduct
 
 interface YourProductsModalProps {
   isOpen: boolean;
@@ -21,6 +22,8 @@ const YourProductsModal: React.FC<YourProductsModalProps> = ({ isOpen, onClose }
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const { productsUpdated, setProductsUpdated } = useProduct(); // Use context
+
 
   const fetchProducts = useCallback(async () => {
     if (isOpen && user && user.products.length > 0) {
@@ -39,6 +42,7 @@ const YourProductsModal: React.FC<YourProductsModalProps> = ({ isOpen, onClose }
         }
         const fetchedProducts: Product[] = await response.json();
         setProducts(fetchedProducts);
+        setProductsUpdated(false); // Reset the update flag
       } catch (error) {
         if (error instanceof Error) {
           setError(error.message);
@@ -49,7 +53,7 @@ const YourProductsModal: React.FC<YourProductsModalProps> = ({ isOpen, onClose }
         setLoading(false);
       }
     }
-  }, [isOpen, user]);
+  }, [isOpen, user, productsUpdated]);
 
   useEffect(() => {
     fetchProducts();

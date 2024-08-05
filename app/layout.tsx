@@ -1,5 +1,7 @@
 import './globals.css';
 import { AuthProvider } from './contexts/AuthContext'; // Import the AuthProvider
+import { ProductProvider } from './contexts/ProductContext';
+
 
 export const metadata = {
   title: 'Pet E-commerce',
@@ -15,7 +17,9 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <AuthProvider>
+        <ProductProvider>
           {children}
+          </ProductProvider>
         </AuthProvider>
       </body>
     </html>

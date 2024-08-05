@@ -8,6 +8,8 @@ import styles from './page.module.css';
 import SellProductModal from './components/SellProductModal';
 import YourProductsModal from './components/YourProuductsModal';
 import AuthModal from './components/AuthModal';
+import AccountModal from './components/AccountModal'; // Import AccountModal
+
 
 export default function Home() {
   const [cartOpen, setCartOpen] = useState(false);
@@ -22,6 +24,8 @@ export default function Home() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(true); // Auth modal initially open
   const [isLoggedIn, setIsLoggedIn] = useState(false); // Track login state
     const [user, setUser] = useState(null);
+    const [isAccountModalOpen, setIsAccountModalOpen] = useState(false); // State for AccountModal
+
 
 
   const cartRef = useRef<HTMLDivElement>(null);
@@ -35,6 +39,8 @@ export default function Home() {
   const openYourProductsModal = () => setIsYourProductsModalOpen(true);
   const closeYourProductsModal = () => setIsYourProductsModalOpen(false);
   const closeAuthModal = () => setIsAuthModalOpen(false);
+  // const openAccountModal = () => setIsAccountModalOpen(true);
+  const closeAccountModal = () => setIsAccountModalOpen(false);
 
 
   const toggleCart = () => setCartOpen(!cartOpen);
@@ -53,6 +59,11 @@ export default function Home() {
     setUser(null);
   };
 
+  const openAccountModal = () => {
+    setIsAccountModalOpen(true);
+    setProfileOpen(false); // Close the profile dropdown
+  };
+  
 
   // Close the dropdowns and menu when clicking outside
   useEffect(() => {
@@ -134,8 +145,8 @@ export default function Home() {
                 {profileOpen && (
                   <div ref={profileRef} className={`${styles.dropdown} absolute right-0 mt-2`}>
                     <ul>
-                      <li className="p-4 border-b border-gray-200 cursor-pointer hover:bg-gray-100">Account</li>
-                      <li className="p-4 border-b border-gray-200 cursor-pointer hover:bg-gray-100">Privacy and Security</li>
+                    <li className="p-4 border-b border-gray-200 cursor-pointer hover:bg-gray-100" onClick={openAccountModal}>Account</li>
+                    <li className="p-4 border-b border-gray-200 cursor-pointer hover:bg-gray-100">Privacy and Security</li>
                       <li className="p-4 border-b border-gray-200 cursor-pointer hover:bg-gray-100">Help</li>
                       <li className="p-4 border-b border-gray-200 cursor-pointer hover:bg-gray-100">Customer Contact</li>
                       <li className="p-4 cursor-pointer hover:bg-gray-100" onClick={handleLogout}>Log Out</li>
@@ -268,6 +279,9 @@ export default function Home() {
       <YourProductsModal isOpen={isYourProductsModalOpen} onClose={closeYourProductsModal} />
       {/* Auth Modal */}
       <AuthModal isOpen={isAuthModalOpen} onClose={closeAuthModal} onLogin={handleLogin} />
+
+      <AccountModal isOpen={isAccountModalOpen} onClose={closeAccountModal} user={user} />
+
     </div>
   );
 }

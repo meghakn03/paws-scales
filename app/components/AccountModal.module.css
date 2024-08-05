@@ -1,0 +1,69 @@
+/* AccountModal.module.css */
+
+.modalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.4); /* Slightly lighter overlay */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000; /* Ensure modal is above other content */
+  }
+  
+  .modalContent {
+    background: #ffffff;
+    padding: 20px;
+    border-radius: 10px; /* Softer corners */
+    width: 90%;
+    max-width: 400px; /* Increase max width for larger content */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Subtle shadow for depth */
+    animation: fadeIn 0.3s ease-out; /* Smooth fade-in effect */
+  }
+  
+  /* Fade-in animation */
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .header {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 15px;
+  }
+  
+  .text {
+    font-size: 1rem;
+    color: #555;
+    margin-bottom: 10px;
+  }
+  
+  .bold {
+    color: #333;
+  }
+  
+  .button {
+    background-color: #4a90e2; /* More appealing blue color */
+    color: #ffffff;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px; /* Rounded corners for the button */
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.3s ease; /* Smooth color transition */
+  }
+  
+  .button:hover {
+    background-color: #357abd; /* Darker blue on hover */
+  }
+  

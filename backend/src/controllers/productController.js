@@ -1,4 +1,3 @@
-// productController.js
 const Product = require('../models/Product');
 
 const getAllProducts = async (req, res) => {
@@ -9,7 +8,6 @@ const getAllProducts = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-
 
 const getProductsByCategoryAndSubCategory = async (req, res) => {
   const { category, subCategory } = req.query;
@@ -28,9 +26,6 @@ const getProductsByCategoryAndSubCategory = async (req, res) => {
   }
 };
 
-
-  
-
 const getProductById = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
@@ -44,10 +39,22 @@ const getProductById = async (req, res) => {
 };
 
 const createProduct = async (req, res) => {
-  const { name, description, price, category, subCategory, imageUrl, quantity } = req.body;
+  const { name, description, price, category, subCategory, imageUrl, quantity, userId } = req.body;
+
+  if (!userId) {
+    return res.status(400).json({ message: 'User ID is required' });
+  }
+
   try {
     const newProduct = new Product({
-      name, description, price, category, subCategory, imageUrl, quantity
+      name,
+      description,
+      price,
+      category,
+      subCategory,
+      imageUrl,
+      quantity,
+      user: userId  // Associate product with the user
     });
     const savedProduct = await newProduct.save();
     res.status(201).json(savedProduct);

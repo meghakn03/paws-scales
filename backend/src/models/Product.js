@@ -7,7 +7,8 @@ const productSchema = new mongoose.Schema({
   price: { type: Number, required: true },
   category: { type: String, required: true },
   subCategory: { type: String, required: true },
-  imageUrl: { type: String }
+  imageUrl: { type: String },
+  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true } // Reference to User
 });
 
 const Product = mongoose.model('Product', productSchema);

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useAuth } from '../contexts/AuthContext'; // Import your context
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -12,6 +13,8 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin }) => {
   const [password, setPassword] = useState('');
   const [name, setName] = useState(''); // For signup only
   const [message, setMessage] = useState('');
+  const { setUser } = useAuth(); // Use the context
+
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,6 +31,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin }) => {
       }
       const data = await response.json();
       onLogin(data); // Pass userData here
+      setUser(data); // Set the user in context
       onClose();
     } catch (error) {
       // Type assertion to handle 'unknown' type error
@@ -50,6 +54,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin }) => {
       }
       const data = await response.json();
       onLogin(data); // Pass userData here
+      setUser(data); // Set the user in context
       onClose();
     } catch (error) {
       // Type assertion to handle 'unknown' type error

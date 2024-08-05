@@ -1,5 +1,5 @@
-// app/layout.tsx
 import './globals.css';
+import { AuthProvider } from './contexts/AuthContext'; // Import the AuthProvider
 
 export const metadata = {
   title: 'Pet E-commerce',
@@ -13,7 +13,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <AuthProvider>
+          {children}
+        </AuthProvider>
+      </body>
     </html>
   );
 }

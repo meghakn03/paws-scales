@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import axios from 'axios';
 import styles from './SellProductModal.module.css'; // Ensure this path is correct
+import { useAuth } from '../contexts/AuthContext';
 
 interface SellProductModalProps {
   isOpen: boolean;
@@ -12,6 +13,7 @@ type SubCategories = {
 };
 
 const SellProductModal: React.FC<SellProductModalProps> = ({ isOpen, onClose }) => {
+  const { user } = useAuth(); // Access user from context
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState<number | string>('');
@@ -33,12 +35,16 @@ const SellProductModal: React.FC<SellProductModalProps> = ({ isOpen, onClose }) 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
 
+    if (!user) {
+      alert('You must be logged in to upload a product');
+      return;
+    }
+
     if (!name || !description || !price || !category || !subCategory || !quantity || !image) {
       alert('Please fill in all fields');
       return;
     }
 
-    // Convert image to URL
     const imageUrl = await uploadImage(image);
 
     const productData = {
@@ -48,17 +54,17 @@ const SellProductModal: React.FC<SellProductModalProps> = ({ isOpen, onClose }) 
       category,
       subCategory,
       imageUrl,
-      quantity: parseInt(quantity.toString(), 10) // Ensure quantity is a number
+      quantity: parseInt(quantity.toString(), 10),
+      userId: user._id // Use the user's _id
     };
 
     try {
-      await axios.post('http://localhost:5000/api/products', productData, {
+      await axios.post('http://localhost:5000/api/products/products', productData, {
         headers: {
           'Content-Type': 'application/json',
         },
       });
       alert('Product added to the database!');
-      onClose(); // Close the modal after successful submission
     } catch (error) {
       console.error('Error submitting product:', error);
       alert('Failed to add product');

@@ -3,11 +3,11 @@
 import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { FaShoppingCart, FaUserCircle, FaBox, FaSadTear, FaSearch, FaBars, FaPlus } from 'react-icons/fa';
+import { FaShoppingCart, FaUserCircle, FaBox, FaSadTear, FaSearch, FaPlus } from 'react-icons/fa';
 import styles from './page.module.css';
 import SellProductModal from './components/SellProductModal';
 import YourProductsModal from './components/YourProuductsModal';
-
+import AuthModal from './components/AuthModal';
 
 export default function Home() {
   const [cartOpen, setCartOpen] = useState(false);
@@ -17,19 +17,24 @@ export default function Home() {
   const [menuOpen, setMenuOpen] = useState(false); // For hamburger menu
   const [cartItems, setCartItems] = useState([]);
   const [orders, setOrders] = useState([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isYourProductsModalOpen, setIsYourProductsModalOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(true); // Auth modal initially open
+  const [isLoggedIn, setIsLoggedIn] = useState(false); // Track login state
+    const [user, setUser] = useState(null);
+
+
   const cartRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
   const ordersRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null); // For menu
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isYourProductsModalOpen, setIsYourProductsModalOpen] = useState(false);
-
 
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
   const openYourProductsModal = () => setIsYourProductsModalOpen(true);
   const closeYourProductsModal = () => setIsYourProductsModalOpen(false);
+  const closeAuthModal = () => setIsAuthModalOpen(false);
 
 
   const toggleCart = () => setCartOpen(!cartOpen);
@@ -37,6 +42,17 @@ export default function Home() {
   const toggleOrders = () => setOrdersOpen(!ordersOpen);
   const toggleSearch = () => setSearchOpen(!searchOpen);
   const toggleMenu = () => setMenuOpen(!menuOpen);
+
+  const handleLogin = (userData: any) => {
+    setIsLoggedIn(true);
+    setUser(userData);
+  };
+
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    setUser(null);
+  };
+
 
   // Close the dropdowns and menu when clicking outside
   useEffect(() => {
@@ -66,127 +82,124 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-     <header className="relative z-20"> {/* Ensure this has a higher z-index */}
-  <div className="flex justify-between items-center p-4">
-    <h1 className="text-3xl font-bold text-gray-900">Paws & Scales</h1>
-    <div className="flex items-center space-x-4">
-      <div className={`relative flex flex-col items-center ${styles.iconContainer}`}>
-        <div className="flex flex-col items-center cursor-pointer" onClick={toggleSearch}>
-          <FaSearch className="text-2xl text-gray-900" />
-          <span className="text-sm text-gray-900">Search</span>
-        </div>
-        {searchOpen && (
-          <div ref={searchRef} className={`${styles.dropdown} absolute right-0 mt-2`}>
-            <input
-              type="text"
-              placeholder="Search..."
-              className="w-full p-2 border border-gray-300 rounded-md"
-            />
-          </div>
-        )}
-      </div>
-      <div className={`relative flex flex-col items-center ${styles.iconContainer}`}>
-        <div className="flex flex-col items-center cursor-pointer" onClick={toggleCart}>
-          <FaShoppingCart className="text-2xl text-gray-900" />
-          <span className="text-sm text-gray-900">Cart</span>
-        </div>
-        {cartOpen && (
-          <div ref={cartRef} className={`${styles.dropdown} absolute right-0 mt-2`}>
-            {cartItems.length === 0 ? (
-              <div className="p-4 text-center">
-                <FaSadTear className="text-3xl text-gray-500 mx-auto" />
-                <p className="text-gray-500">Cart is empty</p>
+      <header className="relative z-20"> {/* Ensure this has a higher z-index */}
+        <div className="flex justify-between items-center p-4">
+          <h1 className="text-3xl font-bold text-gray-900">Paws & Scales</h1>
+          {isLoggedIn && (
+            <div className="flex items-center space-x-4">
+              <div className={`relative flex flex-col items-center ${styles.iconContainer}`}>
+                <div className="flex flex-col items-center cursor-pointer" onClick={toggleSearch}>
+                  <FaSearch className="text-2xl text-gray-900" />
+                  <span className="text-sm text-gray-900">Search</span>
+                </div>
+                {searchOpen && (
+                  <div ref={searchRef} className={`${styles.dropdown} absolute right-0 mt-2`}>
+                    <input
+                      type="text"
+                      placeholder="Search..."
+                      className="w-full p-2 border border-gray-300 rounded-md"
+                    />
+                  </div>
+                )}
               </div>
-            ) : (
-              <ul>
-                {cartItems.map((item, index) => (
-                  <li key={index} className="p-4 border-b border-gray-200">
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        )}
-      </div>
-      <div className={`relative flex flex-col items-center ${styles.iconContainer}`}>
-        <div className="flex flex-col items-center cursor-pointer" onClick={toggleProfile}>
-          <FaUserCircle className="text-2xl text-gray-900" />
-          <span className="text-sm text-gray-900">Profile</span>
-        </div>
-        {profileOpen && (
-          <div ref={profileRef} className={`${styles.dropdown} absolute right-0 mt-2`}>
-            <ul>
-              <li className="p-4 border-b border-gray-200 cursor-pointer hover:bg-gray-100">Account</li>
-              <li className="p-4 border-b border-gray-200 cursor-pointer hover:bg-gray-100">Privacy and Security</li>
-              <li className="p-4 border-b border-gray-200 cursor-pointer hover:bg-gray-100">Help</li>
-              <li className="p-4 border-b border-gray-200 cursor-pointer hover:bg-gray-100">Customer Contact</li>
-              <li className="p-4 cursor-pointer hover:bg-gray-100">Log Out</li>
-            </ul>
-          </div>
-        )}
-      </div>
-      <div className={`relative flex flex-col items-center ${styles.iconContainer}`}>
-        <div className="flex flex-col items-center cursor-pointer" onClick={toggleOrders}>
-          <FaBox className="text-2xl text-gray-900" />
-          <span className="text-sm text-gray-900">Orders</span>
-        </div>
-        {ordersOpen && (
-          <div ref={ordersRef} className={`${styles.dropdown} absolute right-0 mt-2`}>
-            {orders.length === 0 ? (
-              <div className="p-4 text-center">
-                <FaSadTear className="text-3xl text-gray-500 mx-auto" />
-                <p className="text-gray-500">No orders found</p>
+              <div className={`relative flex flex-col items-center ${styles.iconContainer}`}>
+                <div className="flex flex-col items-center cursor-pointer" onClick={toggleCart}>
+                  <FaShoppingCart className="text-2xl text-gray-900" />
+                  <span className="text-sm text-gray-900">Cart</span>
+                </div>
+                {cartOpen && (
+                  <div ref={cartRef} className={`${styles.dropdown} absolute right-0 mt-2`}>
+                    {cartItems.length === 0 ? (
+                      <div className="p-4 text-center">
+                        <FaSadTear className="text-3xl text-gray-500 mx-auto" />
+                        <p className="text-gray-500">Cart is empty</p>
+                      </div>
+                    ) : (
+                      <ul>
+                        {cartItems.map((item, index) => (
+                          <li key={index} className="p-4 border-b border-gray-200">
+                            {item}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                )}
               </div>
-            ) : (
-              <ul>
-                {orders.map((order, index) => (
-                  <li key={index} className="p-4 border-b border-gray-200">
-                    {order}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        )}
-      </div>
-      <div className={`relative flex flex-col items-center ${styles.iconContainer}`}>
-              <div className="flex flex-col items-center cursor-pointer" onClick={openModal}>
-                <FaPlus className="text-2xl text-gray-900" />
-                <span className="text-sm text-gray-900">Sell Product</span>
+              <div className={`relative flex flex-col items-center ${styles.iconContainer}`}>
+                <div className="flex flex-col items-center cursor-pointer" onClick={toggleProfile}>
+                  <FaUserCircle className="text-2xl text-gray-900" />
+                  <span className="text-sm text-gray-900">Profile</span>
+                </div>
+                {profileOpen && (
+                  <div ref={profileRef} className={`${styles.dropdown} absolute right-0 mt-2`}>
+                    <ul>
+                      <li className="p-4 border-b border-gray-200 cursor-pointer hover:bg-gray-100">Account</li>
+                      <li className="p-4 border-b border-gray-200 cursor-pointer hover:bg-gray-100">Privacy and Security</li>
+                      <li className="p-4 border-b border-gray-200 cursor-pointer hover:bg-gray-100">Help</li>
+                      <li className="p-4 border-b border-gray-200 cursor-pointer hover:bg-gray-100">Customer Contact</li>
+                      <li className="p-4 cursor-pointer hover:bg-gray-100" onClick={handleLogout}>Log Out</li>
+                    </ul>
+                  </div>
+                )}
+              </div>
+              <div className={`relative flex flex-col items-center ${styles.iconContainer}`}>
+                <div className="flex flex-col items-center cursor-pointer" onClick={toggleOrders}>
+                  <FaBox className="text-2xl text-gray-900" />
+                  <span className="text-sm text-gray-900">Orders</span>
+                </div>
+                {ordersOpen && (
+                  <div ref={ordersRef} className={`${styles.dropdown} absolute right-0 mt-2`}>
+                    {orders.length === 0 ? (
+                      <div className="p-4 text-center">
+                        <FaSadTear className="text-3xl text-gray-500 mx-auto" />
+                        <p className="text-gray-500">No orders found</p>
+                      </div>
+                    ) : (
+                      <ul>
+                        {orders.map((order, index) => (
+                          <li key={index} className="p-4 border-b border-gray-200">
+                            {order}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                )}
+              </div>
+              <div className={`relative flex flex-col items-center ${styles.iconContainer}`}>
+                <div className="flex flex-col items-center cursor-pointer" onClick={openModal}>
+                  <FaPlus className="text-2xl text-gray-900" />
+                  <span className="text-sm text-gray-900">Sell Product</span>
+                </div>
+              </div>
+              <div className={`relative flex flex-col items-center ${styles.iconContainer}`}>
+                <div className="flex flex-col items-center cursor-pointer" onClick={openYourProductsModal}>
+                  <FaBox className="text-2xl text-gray-900" />
+                  <span className="text-sm text-gray-900">Your Products</span>
+                </div>
               </div>
             </div>
-            <div className={`relative flex flex-col items-center ${styles.iconContainer}`}>
-        <div className="flex flex-col items-center cursor-pointer" onClick={openYourProductsModal}>
-          <FaBox className="text-2xl text-gray-900" />
-          <span className="text-sm text-gray-900">Your Products</span>
+          )}
         </div>
-      </div>
-      {/* <div className="md:hidden flex items-center">
-        <button onClick={toggleMenu}>
-          <FaBars className="text-2xl text-gray-900" />
-        </button>
-      </div> */}
-    </div>
-  </div>
-</header>
-        {/* Hero Section with Video */}
-        <section className={`${styles.hero} relative z-0`}>
-  <video
-    className={`${styles.heroVideo} absolute inset-0 w-full h-full object-cover`}
-    autoPlay
-    muted
-    loop
-  >
-    <source src="/heroVideo.mp4" type="video/mp4" />
-    Your browser does not support the video tag.
-  </video>
-  <div className="relative z-10 flex flex-col items-center justify-center h-full p-4">
-    <div className="text-center text-white mb-8">
-      <h1 className="text-4xl font-bold mb-4">The Ultimate Pet Store You Ever Need</h1>
-      <p className="text-lg">Find everything you need for your pet friend.</p>
-    </div>
-  </div>
+      </header>
+      {/* Hero Section with Video */}
+      <section className={`${styles.hero} relative z-0`}>
+        <video
+          className={`${styles.heroVideo} absolute inset-0 w-full h-full object-cover`}
+          autoPlay
+          muted
+          loop
+        >
+          <source src="/heroVideo.mp4" type="video/mp4" />
+          Your browser does not support the video tag.
+        </video>
+        <div className="relative z-10 flex flex-col items-center justify-center h-full p-4">
+          <div className="text-center text-white mb-8">
+            <h1 className="text-4xl font-bold mb-4">The Ultimate Pet Store You Ever Need</h1>
+            <p className="text-lg">Find everything you need for your pet friend.</p>
+          </div>
+        </div>
       </section>
       <main>
         <div className={`${styles.categoriesContainer} py-10`}>
@@ -249,9 +262,12 @@ export default function Home() {
           </div>
         </div>
       </main>
-{/* Sell Product Modal */}
-{isModalOpen && <SellProductModal isOpen={isModalOpen} onClose={closeModal} />}
-<YourProductsModal isOpen={isYourProductsModalOpen} onClose={closeYourProductsModal} />
-
-    </div>  );
+      {/* Sell Product Modal */}
+      {isModalOpen && <SellProductModal isOpen={isModalOpen} onClose={closeModal} />}
+      {/* Your Products Modal */}
+      <YourProductsModal isOpen={isYourProductsModalOpen} onClose={closeYourProductsModal} />
+      {/* Auth Modal */}
+      <AuthModal isOpen={isAuthModalOpen} onClose={closeAuthModal} onLogin={handleLogin} />
+    </div>
+  );
 }

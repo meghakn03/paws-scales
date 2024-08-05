@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { FaShoppingCart, FaUserCircle, FaBox, FaSadTear, FaSearch, FaPlus } from 'react-icons/fa';
+import { FaShoppingCart, FaUserCircle, FaBox, FaSadTear, FaSearch, FaPlus, FaSignInAlt } from 'react-icons/fa';
 import styles from './page.module.css';
 import SellProductModal from './components/SellProductModal';
 import YourProductsModal from './components/YourProuductsModal';
@@ -25,6 +25,7 @@ export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false); // Track login state
     const [user, setUser] = useState(null);
     const [isAccountModalOpen, setIsAccountModalOpen] = useState(false); // State for AccountModal
+    const [showLoginPrompt, setShowLoginPrompt] = useState(false); // Show login prompt after logout
 
 
 
@@ -52,16 +53,26 @@ export default function Home() {
   const handleLogin = (userData: any) => {
     setIsLoggedIn(true);
     setUser(userData);
+    setShowLoginPrompt(false); // Hide login prompt when logged in
+    setProfileOpen(false); // Ensure profile dropdown does not reopen
+
   };
 
   const handleLogout = () => {
     setIsLoggedIn(false);
     setUser(null);
+    setProfileOpen(false); // Close the profile dropdown
+    closeAuthModal()
+    setShowLoginPrompt(true); // Show login prompt after logout
   };
 
   const openAccountModal = () => {
     setIsAccountModalOpen(true);
     setProfileOpen(false); // Close the profile dropdown
+  };
+
+  const handleLoginPrompt = () => {
+    setIsAuthModalOpen(true);
   };
   
 
@@ -190,6 +201,17 @@ export default function Home() {
                   <span className="text-sm text-gray-900">Your Products</span>
                 </div>
               </div>
+            </div>
+          )}
+          {!isLoggedIn && (
+            <div className="flex items-center space-x-4">
+              <button
+                className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-md shadow-sm hover:bg-gray-100"
+                onClick={handleLoginPrompt}
+              >
+                <FaSignInAlt className="text-lg text-gray-900" />
+                <span className="text-gray-900">Log In</span>
+              </button>
             </div>
           )}
         </div>

@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import styles from './YourProductsModal.module.css';
+import { useAuth } from '../contexts/AuthContext'; // Assuming you have an AuthContext
 
 interface YourProductsModalProps {
   isOpen: boolean;
@@ -16,16 +17,47 @@ interface Product {
 }
 
 const YourProductsModal: React.FC<YourProductsModalProps> = ({ isOpen, onClose }) => {
+  const { user } = useAuth(); // Access user from context
   const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchProducts = useCallback(async () => {
+    if (isOpen && user && user.products.length > 0) {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await fetch('http://localhost:5000/api/products/products/by-ids', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ ids: user.products }),
+        });
+        if (!response.ok) {
+          throw new Error('Failed to fetch products');
+        }
+        const fetchedProducts: Product[] = await response.json();
+        setProducts(fetchedProducts);
+      } catch (error) {
+        if (error instanceof Error) {
+          setError(error.message);
+        } else {
+          setError('An unexpected error occurred');
+        }
+      } finally {
+        setLoading(false);
+      }
+    }
+  }, [isOpen, user]);
 
   useEffect(() => {
-    if (isOpen) {
-      fetch('http://localhost:5000/api/products')
-        .then(response => response.json())
-        .then(data => setProducts(data))
-        .catch(error => console.error('Error fetching products:', error));
-    }
-  }, [isOpen]);
+    fetchProducts();
+  }, [fetchProducts]);
+
+  const handleReload = () => {
+    fetchProducts();
+  };
 
   if (!isOpen) {
     return null;
@@ -39,7 +71,12 @@ const YourProductsModal: React.FC<YourProductsModalProps> = ({ isOpen, onClose }
           <button className={styles.closeButton} onClick={onClose}>&times;</button>
         </div>
         <div className={styles.modalBody}>
-          {products.length === 0 ? (
+          <button className={styles.reloadButton} onClick={handleReload}>
+            Reload
+          </button>
+          {loading && <p>Loading products...</p>}
+          {error && <p>Error: {error}</p>}
+          {products.length === 0 && !loading ? (
             <p>No products found.</p>
           ) : (
             <ul className={styles.productList}>

@@ -12,21 +12,23 @@ const mongoURI = process.env.MONGODB_URI;
 // Configure CORS
 app.use(cors()); // Allow all origins by default
 
+// Middleware to parse JSON
+app.use(express.json());
+
+// Serve static files from the 'uploads' directory
+app.use('/uploads', express.static('uploads'));
+
 // Configure file upload with multer
 const upload = multer({
   dest: 'uploads/', // Directory to save uploaded files
   limits: { fileSize: 10 * 1024 * 1024 } // Limit file size to 10MB
 });
 
-// Serve static files from the 'uploads' directory
-app.use('/uploads', express.static('uploads'));
-
-mongoose.connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true })
-  .then(() => console.log('MongoDB connected'))
-  .catch(err => console.log(err));
-
-// Middleware to parse JSON
-app.use(express.json());
+// Log incoming requests
+app.use((req, res, next) => {
+  console.log(`Incoming request: ${req.method} ${req.url}`);
+  next();
+});
 
 // Handle file upload
 app.post('/api/upload', upload.single('image'), (req, res) => {
@@ -47,6 +49,10 @@ app.use('/api/products', productRoutes);
 // Include user routes under /api/users
 const userRoutes = require('./routes/userRoutes');
 app.use('/api/users', userRoutes);
+
+mongoose.connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true })
+  .then(() => console.log('MongoDB connected'))
+  .catch(err => console.log(err));
 
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);

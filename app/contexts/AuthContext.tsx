@@ -6,6 +6,9 @@ interface User {
   _id: string;
   name: string;
   email: string;
+  products: string[]; // Array of product IDs
+  cart: string[]; // Array of product IDs
+  orders: string[]; // Array of order IDs
 }
 
 interface AuthContextType {

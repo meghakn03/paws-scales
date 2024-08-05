@@ -40,6 +40,7 @@ const getProductById = async (req, res) => {
   }
 };
 
+
 const createProduct = async (req, res) => {
   const { name, description, price, category, subCategory, imageUrl, quantity, userId } = req.body;
   
@@ -69,4 +70,21 @@ const createProduct = async (req, res) => {
   }
 };
 
-module.exports = { getAllProducts, getProductById, createProduct, getProductsByCategoryAndSubCategory };
+const getProductsByIds = async (req, res) => {
+  const { ids } = req.body;
+
+  try {
+    // Ensure ids is an array
+    if (!Array.isArray(ids)) {
+      return res.status(400).json({ message: 'Invalid request body' });
+    }
+
+    // Fetch products by IDs
+    const products = await Product.find({ '_id': { $in: ids } });
+    res.json(products);
+  } catch (error) {
+    console.error('Error fetching products by IDs:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+module.exports = { getAllProducts, getProductById, createProduct, getProductsByCategoryAndSubCategory, getProductsByIds };

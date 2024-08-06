@@ -72,11 +72,12 @@ const deleteUser = async (req, res) => {
 
 // Add product to cart
 const addToCart = async (req, res) => {
-  const { userId, productId } = req.body;
+  const { userId, productId, quantity } = req.body;
   try {
     const user = await User.findById(userId);
     if (user) {
-      user.cart.push(productId);
+      // Update cart with the quantity
+      user.cart.set(productId, quantity);
       await user.save();
       res.status(200).json(user);
     } else {
@@ -107,5 +108,6 @@ const placeOrder = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
 
 module.exports = { registerUser, loginUser, getUserById, updateUser, deleteUser, addToCart, placeOrder };

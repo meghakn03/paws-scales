@@ -1,13 +1,15 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faShoppingCart, faClipboardList, faSadTear } from '@fortawesome/free-solid-svg-icons';
 import styles from '../../page.module.css';
+import { useAuth } from '../../contexts/AuthContext'; // Adjust the path as needed
+
 
 type ProductItem = {
-  id: number;
+  _id: string; // Change from number to string
   name: string;
   price: string;
   imageUrl: string;
@@ -17,17 +19,18 @@ type ProductItem = {
 };
 
 type CartItem = {
-  id: number;
+  _id: string; // Change from number to string
   name: string;
   price: string;
-  image: string;
+  imageUrl: string;
+  quantity: number; // Added quantity property
 };
 
 type OrderItem = {
-  id: number;
+  _id: string; // Change from number to string
   name: string;
   price: string;
-  image: string;
+  imageUrl: string;
 };
 
 const categories = [
@@ -38,10 +41,11 @@ const categories = [
 ];
 
 export default function DogSuppliesPage() {
+  const { user, setUser } = useAuth();
   const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
   const [products, setProducts] = useState<ProductItem[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<ProductItem[]>([]);
-  const [quantities, setQuantities] = useState<{ [key: number]: number }>({});
+  const [quantities, setQuantities] = useState<{ [key: string]: number }>({});
   const [cartVisible, setCartVisible] = useState(false);
   const [ordersVisible, setOrdersVisible] = useState(false);
 
@@ -82,6 +86,7 @@ export default function DogSuppliesPage() {
         })
         .then(data => {
           setFilteredProducts(data);
+          console.log('fileteredProducts: ', filteredProducts)
           scrollToDynamicProducts(); // Auto-scroll to dynamic section
         })
         .catch(error => console.error('Error fetching filtered products:', error));
@@ -96,22 +101,111 @@ export default function DogSuppliesPage() {
     setSelectedProduct(null);
   };
 
-  const handleQuantityChange = (productId: number, newQuantity: number) => {
+  const handleQuantityChange = (productId: string, newQuantity: number) => {
     setQuantities(prevQuantities => ({
       ...prevQuantities,
       [productId]: newQuantity,
     }));
   };
 
-  const handleAddToCart = (product: ProductItem) => {
-    const newCartItem: CartItem = {
-      id: product.id,
-      name: product.name,
-      price: product.price,
-      image: product.imageUrl,
-    };
-    setCartItems(prevCartItems => [...prevCartItems, newCartItem]);
+  const handleAddToCart = async (product: ProductItem) => {
+    if (!user) {
+      console.log('User is not logged in');
+      return; // Ensure user is logged in
+    }
+  
+    const quantity = quantities[product._id] || 1; // Use specified quantity, default to 1
+  
+    console.log('Adding product to cart:', product._id, 'Quantity:', quantity);
+  
+    try {
+      // Add product to cart in backend
+      await fetch('http://localhost:5000/api/users/add-to-cart', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: user._id,
+          productId: product._id,
+          quantity,
+        }),
+      });
+  
+      // Update cart items state
+      const updatedCartItems = [...cartItems];
+      const existingItemIndex = updatedCartItems.findIndex(item => item._id === product._id);
+  
+      if (existingItemIndex >= 0) {
+        updatedCartItems[existingItemIndex].quantity = quantity;
+      } else {
+        updatedCartItems.push({
+          _id: product._id,
+          name: product.name,
+          price: product.price,
+          imageUrl: product.imageUrl,
+          quantity,
+        });
+      }
+      
+      setCartItems(updatedCartItems);
+  
+      // Update cart in AuthContext
+      setUser(prevUser => {
+        const updatedUser = prevUser ? {
+          ...prevUser,
+          cart: {
+            ...(prevUser.cart || {}),
+            [product._id]: quantity,
+          },
+        } : null;
+        console.log('Updated user in context:', updatedUser);
+        return updatedUser;
+      });
+    } catch (error) {
+      console.error('Error adding product to cart:', error);
+    }
   };
+
+  const [cartItemQuantities, setCartItemQuantities] = useState<{ [key: string]: number }>({});
+
+  const fetchCartItems = useCallback(async () => {
+    if (cartVisible && user && Object.keys(user.cart).length > 0) {
+      try {
+        const response = await fetch('http://localhost:5000/api/products/products/by-ids', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ ids: Object.keys(user.cart) }),
+        });
+        if (!response.ok) {
+          throw new Error('Failed to fetch cart items');
+        }
+        const fetchedCartItems: CartItem[] = await response.json();
+  
+        // Use the correct type for cartItemQuantities
+        const cartItemQuantities: { [key: string]: number } = user.cart;
+        const aggregatedCartItems = fetchedCartItems.map(item => ({
+          ...item,
+          quantity: cartItemQuantities[item._id] || 0, // Ensure item._id is a string
+        }));
+  
+        setCartItems(aggregatedCartItems);
+      } catch (error) {
+        console.error('Error fetching cart items:', error);
+      }
+    }
+  }, [cartVisible, user]);
+  
+  
+  
+
+  useEffect(() => {
+    fetchCartItems();
+  }, [fetchCartItems]);
+  
+  
 
   const scrollToDynamicProducts = () => {
     const section = document.getElementById('dynamic-products');
@@ -135,9 +229,9 @@ export default function DogSuppliesPage() {
             {cartItems.length > 0 ? (
               <ul>
                 {cartItems.map(item => (
-                  <li key={item.id} className={styles.dropdownItem}>
-                    <Image src={item.image} alt={item.name} width={50} height={50} />
-                    <span>{item.name}</span> - <span>{item.price}</span>
+                  <li key={item._id} className={styles.dropdownItem}>
+                    <Image src={item.imageUrl} alt={item.name} width={50} height={50} />
+                    <span>{item.name}</span> - <span>{item.price}</span> - <span>Quantity: {item.quantity}</span>
                   </li>
                 ))}
               </ul>
@@ -149,7 +243,7 @@ export default function DogSuppliesPage() {
             )}
           </div>
         )}
-
+  
         <button className={`${styles.iconButton} p-2 bg-transparent border-none`} onClick={toggleOrdersVisibility}>
           <FontAwesomeIcon icon={faClipboardList} size="lg" className={`${styles.icon} text-white`} />
         </button>
@@ -158,8 +252,8 @@ export default function DogSuppliesPage() {
             {orderItems.length > 0 ? (
               <ul>
                 {orderItems.map(item => (
-                  <li key={item.id} className={styles.dropdownItem}>
-                    <Image src={item.image} alt={item.name} width={50} height={50} />
+                  <li key={item._id} className={styles.dropdownItem}>
+                    <Image src={item.imageUrl} alt={item.name} width={50} height={50} />
                     <span>{item.name}</span> - <span>{item.price}</span>
                   </li>
                 ))}
@@ -173,7 +267,7 @@ export default function DogSuppliesPage() {
           </div>
         )}
       </header>
-
+  
       {/* Hero Section with Video */}
       <section className={`${styles.hero} relative`}>
         <video
@@ -205,7 +299,7 @@ export default function DogSuppliesPage() {
           </div>
         </div>
       </section>
-
+  
       {/* Our Products Section */}
       <section id="products" className="py-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -229,7 +323,7 @@ export default function DogSuppliesPage() {
           </div>
         </div>
       </section>
-
+  
       {/* Dynamic Products Section */}
       {selectedProduct && (
         <section id="dynamic-products" className="py-10">
@@ -240,33 +334,37 @@ export default function DogSuppliesPage() {
             >
               Close
             </button>
-            <h2 className="text-2xl font-bold text-center mb-6">{selectedProduct.replace('-', ' ').toUpperCase()} Items</h2>
+            <h2 className="text-2xl font-bold text-center mb-6">
+              {selectedProduct.replace('-', ' ').toUpperCase()} Items
+            </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-              {filteredProducts.length > 0 ? (
-                filteredProducts.map(product => (
-                  <div key={product.id} className="bg-white shadow rounded-lg p-4">
-                    <Image src={product.imageUrl} alt={product.name} width={200} height={200} className="w-full h-32 object-cover" />
-                    <h3 className="text-lg font-semibold mt-4">{product.name}</h3>
-                    <p className="text-gray-700">{product.description}</p>
-                    <p className="text-gray-900 font-bold mt-2">${product.price}</p>
-                    <input
-                      type="number"
-                      min="1"
-                      value={quantities[product.id] || 1}
-                      onChange={(e) => handleQuantityChange(product.id, parseInt(e.target.value, 10))}
-                      className="mt-2 p-2 border rounded"
-                    />
-                    <button
-                      onClick={() => handleAddToCart(product)}
-                      className="mt-4 bg-blue-500 text-white py-2 px-4 rounded"
-                    >
-                      Add to Cart
-                    </button>
-                  </div>
-                ))
-              ) : (
-                <p>No products found in this category.</p>
-              )}
+              {filteredProducts.map(product => (
+                <div key={product._id} className="bg-white shadow rounded-lg p-4">
+                  <Image
+                    src={product.imageUrl}
+                    alt={product.name}
+                    width={200}
+                    height={200}
+                    className="w-full h-32 object-cover"
+                  />
+                  <h3 className="text-lg font-semibold mt-4">{product.name}</h3>
+                  <p className="text-gray-700">{product.description}</p>
+                  <p className="text-gray-900 font-bold mt-2">${product.price}</p>
+                  <input
+                    type="number"
+                    min="1"
+                    value={quantities[product._id] || 1}
+                    onChange={(e) => handleQuantityChange(product._id, parseInt(e.target.value, 10))}
+                    className="mt-2 p-2 border rounded"
+                  />
+                  <button
+                    onClick={() => handleAddToCart(product)}
+                    className="mt-4 bg-blue-500 text-white py-2 px-4 rounded"
+                  >
+                    Add to Cart
+                  </button>
+                </div>
+              ))}
             </div>
           </div>
         </section>

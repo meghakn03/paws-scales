@@ -23,7 +23,6 @@ type CartItem = {
   name: string;
   price: string;
   imageUrl: string;
-  quantity: number; // Added quantity property
 };
 
 type OrderItem = {
@@ -113,11 +112,9 @@ export default function DogSuppliesPage() {
       console.log('User is not logged in');
       return; // Ensure user is logged in
     }
-  
-    const quantity = quantities[product._id] || 1; // Use specified quantity, default to 1
-  
-    console.log('Adding product to cart:', product._id, 'Quantity:', quantity);
-  
+
+    console.log('Adding product to cart:', product._id);
+
     try {
       // Add product to cart in backend
       await fetch('http://localhost:5000/api/users/add-to-cart', {
@@ -128,35 +125,31 @@ export default function DogSuppliesPage() {
         body: JSON.stringify({
           userId: user._id,
           productId: product._id,
-          quantity,
         }),
       });
-  
+
       // Update cart items state
       const updatedCartItems = [...cartItems];
       const existingItemIndex = updatedCartItems.findIndex(item => item._id === product._id);
-  
-      if (existingItemIndex >= 0) {
-        updatedCartItems[existingItemIndex].quantity = quantity;
-      } else {
+
+      if (existingItemIndex < 0) {
         updatedCartItems.push({
           _id: product._id,
           name: product.name,
           price: product.price,
           imageUrl: product.imageUrl,
-          quantity,
         });
       }
       
       setCartItems(updatedCartItems);
-  
+
       // Update cart in AuthContext
       setUser(prevUser => {
         const updatedUser = prevUser ? {
           ...prevUser,
           cart: {
             ...(prevUser.cart || {}),
-            [product._id]: quantity,
+            [product._id]: 1,
           },
         } : null;
         console.log('Updated user in context:', updatedUser);
@@ -167,37 +160,27 @@ export default function DogSuppliesPage() {
     }
   };
 
-  const [cartItemQuantities, setCartItemQuantities] = useState<{ [key: string]: number }>({});
-
   const fetchCartItems = useCallback(async () => {
-    if (cartVisible && user && Object.keys(user.cart).length > 0) {
+    if (cartVisible && user && user.cart.length > 0) {
       try {
         const response = await fetch('http://localhost:5000/api/products/products/by-ids', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ ids: Object.keys(user.cart) }),
+          body: JSON.stringify({ ids: user.cart }),
         });
         if (!response.ok) {
           throw new Error('Failed to fetch cart items');
         }
         const fetchedCartItems: CartItem[] = await response.json();
   
-        // Use the correct type for cartItemQuantities
-        const cartItemQuantities: { [key: string]: number } = user.cart;
-        const aggregatedCartItems = fetchedCartItems.map(item => ({
-          ...item,
-          quantity: cartItemQuantities[item._id] || 0, // Ensure item._id is a string
-        }));
-  
-        setCartItems(aggregatedCartItems);
+        setCartItems(fetchedCartItems);
       } catch (error) {
         console.error('Error fetching cart items:', error);
       }
     }
   }, [cartVisible, user]);
-  
   
   
 
@@ -231,7 +214,7 @@ export default function DogSuppliesPage() {
                 {cartItems.map(item => (
                   <li key={item._id} className={styles.dropdownItem}>
                     <Image src={item.imageUrl} alt={item.name} width={50} height={50} />
-                    <span>{item.name}</span> - <span>{item.price}</span> - <span>Quantity: {item.quantity}</span>
+                    <span>{item.name}</span> - <span>{item.price}</span>
                   </li>
                 ))}
               </ul>

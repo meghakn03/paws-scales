@@ -72,13 +72,15 @@ const deleteUser = async (req, res) => {
 
 // Add product to cart
 const addToCart = async (req, res) => {
-  const { userId, productId, quantity } = req.body;
+  const { userId, productId } = req.body;
   try {
     const user = await User.findById(userId);
     if (user) {
-      // Update cart with the quantity
-      user.cart.set(productId, quantity);
-      await user.save();
+      // Add product ID to cart array
+      if (!user.cart.includes(productId)) {
+        user.cart.push(productId);
+        await user.save();
+      }
       res.status(200).json(user);
     } else {
       res.status(404).json({ message: 'User not found' });
@@ -87,6 +89,7 @@ const addToCart = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
 
 // Place an order
 const placeOrder = async (req, res) => {

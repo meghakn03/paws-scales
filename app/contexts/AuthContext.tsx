@@ -7,7 +7,7 @@ interface User {
   name: string;
   email: string;
   products: string[]; // Array of product IDs
-  cart: { [key: string]: number };
+  cart: string[]; // Array of product IDs
   orders: string[]; // Array of order IDs
 }
 

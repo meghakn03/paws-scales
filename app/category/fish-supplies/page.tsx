@@ -1,29 +1,32 @@
 'use client';
 
 import Image from 'next/image';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faShoppingCart, faClipboardList, faSadTear } from '@fortawesome/free-solid-svg-icons';
 import styles from '../../page.module.css';
+import { useAuth } from '../../contexts/AuthContext'; // Adjust the path as needed
+
 
 type ProductItem = {
-  id: number;
+  _id: string; // Change from number to string
   name: string;
   price: string;
   imageUrl: string;
+  description: string;
   category: string;
   subCategory: string;
 };
 
 type CartItem = {
-  id: number;
+  _id: string; // Change from number to string
   name: string;
   price: string;
   imageUrl: string;
 };
 
 type OrderItem = {
-  id: number;
+  _id: string; // Change from number to string
   name: string;
   price: string;
   imageUrl: string;
@@ -32,10 +35,11 @@ type OrderItem = {
 const subCategories = ['Fish Tanks', 'Fish Food', 'Fish Toys', 'Fish Filters'];
 
 export default function FishSuppliesPage() {
+  const { user, setUser } = useAuth();
   const [selectedSubCategory, setSelectedSubCategory] = useState<string | null>(null);
   const [products, setProducts] = useState<ProductItem[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<ProductItem[]>([]);
-  const [quantities, setQuantities] = useState<{ [key: number]: number }>({});
+  const [quantities, setQuantities] = useState<{ [key: string]: number }>({});
   const [cartVisible, setCartVisible] = useState(false);
   const [ordersVisible, setOrdersVisible] = useState(false);
 
@@ -94,20 +98,91 @@ export default function FishSuppliesPage() {
     setSelectedSubCategory(null);
   };
 
-  const handleQuantityChange = (productId: number, newQuantity: number) => {
-    setQuantities((prevQuantities) => ({
+  const handleQuantityChange = (productId: string, newQuantity: number) => {
+    setQuantities(prevQuantities => ({
       ...prevQuantities,
       [productId]: newQuantity,
     }));
   };
+  
 
-  const handleAddToCart = (product: ProductItem) => {
-    const quantity = quantities[product.id] || 1;
-    setCartItems((prevCartItems) => [
-      ...prevCartItems,
-      { ...product, quantity },
-    ]);
+  const handleAddToCart = async (product: ProductItem) => {
+    if (!user) {
+      console.log('User is not logged in');
+      return; // Ensure user is logged in
+    }
+
+    console.log('Adding product to cart:', product._id);
+
+    try {
+      // Add product to cart in backend
+      await fetch('http://localhost:5000/api/users/add-to-cart', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: user._id,
+          productId: product._id,
+        }),
+      });
+
+      // Update cart items state
+      const updatedCartItems = [...cartItems];
+      const existingItemIndex = updatedCartItems.findIndex(item => item._id === product._id);
+
+      if (existingItemIndex < 0) {
+        updatedCartItems.push({
+          _id: product._id,
+          name: product.name,
+          price: product.price,
+          imageUrl: product.imageUrl,
+        });
+      }
+      
+      setCartItems(updatedCartItems);
+
+      // Update cart in AuthContext
+      setUser(prevUser => {
+        const updatedUser = prevUser ? {
+          ...prevUser,
+          cart: {
+            ...(prevUser.cart || {}),
+            [product._id]: 1,
+          },
+        } : null;
+        console.log('Updated user in context:', updatedUser);
+        return updatedUser;
+      });
+    } catch (error) {
+      console.error('Error adding product to cart:', error);
+    }
   };
+
+  const fetchCartItems = useCallback(async () => {
+    if (cartVisible && user && user.cart.length > 0) {
+      try {
+        const response = await fetch('http://localhost:5000/api/products/products/by-ids', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ ids: user.cart }),
+        });
+        if (!response.ok) {
+          throw new Error('Failed to fetch cart items');
+        }
+        const fetchedCartItems: CartItem[] = await response.json();
+  
+        setCartItems(fetchedCartItems);
+      } catch (error) {
+        console.error('Error fetching cart items:', error);
+      }
+    }
+  }, [cartVisible, user]);
+  useEffect(() => {
+    fetchCartItems();
+  }, [fetchCartItems]);
 
   const scrollToProducts = () => {
     const section = document.getElementById('products');
@@ -138,7 +213,7 @@ export default function FishSuppliesPage() {
             {cartItems.length > 0 ? (
               <ul>
                 {cartItems.map((item) => (
-                  <li key={item.id} className={styles.dropdownItem}>
+                  <li key={item._id} className={styles.dropdownItem}>
                     <Image src={item.imageUrl} alt={item.name} width={50} height={50} />
                     <span>{item.name}</span> - <span>{item.price}</span>
                   </li>
@@ -161,7 +236,7 @@ export default function FishSuppliesPage() {
             {orderItems.length > 0 ? (
               <ul>
                 {orderItems.map((item) => (
-                  <li key={item.id} className={styles.dropdownItem}>
+                  <li key={item._id} className={styles.dropdownItem}>
                     <Image src={item.imageUrl} alt={item.name} width={50} height={50} />
                     <span>{item.name}</span> - <span>{item.price}</span>
                   </li>
@@ -247,7 +322,7 @@ export default function FishSuppliesPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {filteredProducts.length > 0 ? (
                 filteredProducts.map((product) => (
-                  <div key={product.id} className="bg-white shadow-md rounded-lg p-4">
+                  <div key={product._id} className="bg-white shadow-md rounded-lg p-4">
                     <Image src={product.imageUrl} alt={product.name} width={500} height={500} className="w-full h-48 object-cover" />
                     <div className="mt-4">
                       <h3 className="text-lg font-medium text-gray-900">{product.name}</h3>
@@ -262,8 +337,8 @@ export default function FishSuppliesPage() {
                         <input
                           type="number"
                           min="1"
-                          value={quantities[product.id] || 1}
-                          onChange={(e) => handleQuantityChange(product.id, Number(e.target.value))}
+                          value={quantities[product._id] || 1}
+                          onChange={(e) => handleQuantityChange(product._id, Number(e.target.value))}
                           className="border p-2 rounded w-full"
                         />
                       </div>

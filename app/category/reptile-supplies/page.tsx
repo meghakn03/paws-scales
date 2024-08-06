@@ -1,31 +1,34 @@
 'use client';
 
 import Image from 'next/image';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faShoppingCart, faClipboardList, faSadTear } from '@fortawesome/free-solid-svg-icons';
 import styles from '../../page.module.css';
+import { useAuth } from '../../contexts/AuthContext'; // Adjust the path as needed
 
 type ProductItem = {
-  _id: string;
+  _id: string; // Change from number to string
   name: string;
-  price: number;
+  price: string;
   imageUrl: string;
+  description: string;
+  category: string;
   subCategory: string;
 };
 
 type CartItem = {
-  id: string;
+  _id: string; // Change from number to string
   name: string;
-  price: number;
-  image: string;
+  price: string;
+  imageUrl: string;
 };
 
 type OrderItem = {
-  id: string;
+  _id: string; // Change from number to string
   name: string;
-  price: number;
-  image: string;
+  price: string;
+  imageUrl: string;
 };
 
 const fetchProducts = async () => {
@@ -51,6 +54,7 @@ const fetchFilteredProducts = async (subCategory: string) => {
 };
 
 export default function ReptileSuppliesPage() {
+  const { user, setUser } = useAuth();
   const [products, setProducts] = useState<ProductItem[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<ProductItem[]>([]);
   const [selectedSubCategory, setSelectedSubCategory] = useState<string | null>(null);
@@ -87,31 +91,102 @@ export default function ReptileSuppliesPage() {
   };
 
   const handleQuantityChange = (productId: string, newQuantity: number) => {
-    setQuantities((prevQuantities) => ({
+    setQuantities(prevQuantities => ({
       ...prevQuantities,
       [productId]: newQuantity,
     }));
   };
+  
 
-  const handleAddToCart = (item: ProductItem) => {
-    const newCartItem: CartItem = {
-      id: item._id,
-      name: item.name,
-      price: item.price,
-      image: item.imageUrl,
-    };
+  const handleAddToCart = async (product: ProductItem) => {
+    if (!user) {
+      console.log('User is not logged in');
+      return; // Ensure user is logged in
+    }
 
-    setCartItems((prevCartItems) => {
-      const itemExists = prevCartItems.find((cartItem) => cartItem.id === item._id);
-      if (itemExists) {
-        return prevCartItems.map((cartItem) =>
-          cartItem.id === item._id ? newCartItem : cartItem
-        );
-      } else {
-        return [...prevCartItems, newCartItem];
+    console.log('Adding product to cart:', product._id);
+
+    try {
+      // Add product to cart in backend
+      await fetch('http://localhost:5000/api/users/add-to-cart', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: user._id,
+          productId: product._id,
+        }),
+      });
+
+      // Update cart items state
+      const updatedCartItems = [...cartItems];
+      const existingItemIndex = updatedCartItems.findIndex(item => item._id === product._id);
+
+      if (existingItemIndex < 0) {
+        updatedCartItems.push({
+          _id: product._id,
+          name: product.name,
+          price: product.price,
+          imageUrl: product.imageUrl,
+        });
       }
-    });
+      
+      setCartItems(updatedCartItems);
+
+      // Update cart in AuthContext
+      setUser(prevUser => {
+        const updatedUser = prevUser ? {
+          ...prevUser,
+          cart: {
+            ...(prevUser.cart || {}),
+            [product._id]: 1,
+          },
+        } : null;
+        console.log('Updated user in context:', updatedUser);
+        return updatedUser;
+      });
+    } catch (error) {
+      console.error('Error adding product to cart:', error);
+    }
   };
+
+  const fetchCartItems = useCallback(async () => {
+    if (cartVisible && user && user.cart.length > 0) {
+      try {
+        const response = await fetch('http://localhost:5000/api/products/products/by-ids', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ ids: user.cart }),
+        });
+        if (!response.ok) {
+          throw new Error('Failed to fetch cart items');
+        }
+        const fetchedCartItems: CartItem[] = await response.json();
+  
+        setCartItems(fetchedCartItems);
+      } catch (error) {
+        console.error('Error fetching cart items:', error);
+      }
+    }
+  }, [cartVisible, user]);
+  useEffect(() => {
+    fetchCartItems();
+  }, [fetchCartItems]);
+
+  //   setCartItems((prevCartItems) => {
+  //     const itemExists = prevCartItems.find((cartItem) => cartItem.id === item._id);
+  //     if (itemExists) {
+  //       return prevCartItems.map((cartItem) =>
+  //         cartItem.id === item._id ? newCartItem : cartItem
+  //       );
+  //     } else {
+  //       return [...prevCartItems, newCartItem];
+  //     }
+  //   });
+  // };
 
   const scrollToProducts = () => {
     const section = document.getElementById('products');
@@ -135,8 +210,8 @@ export default function ReptileSuppliesPage() {
             {cartItems.length > 0 ? (
               <ul>
                 {cartItems.map((item) => (
-                  <li key={item.id} className={styles.dropdownItem}>
-                    <Image src={item.image} alt={item.name} width={50} height={50} />
+                  <li key={item._id} className={styles.dropdownItem}>
+                    <Image src={item.imageUrl} alt={item.name} width={50} height={50} />
                     <span>{item.name}</span> - <span>${item.price}</span>
                   </li>
                 ))}
@@ -158,8 +233,8 @@ export default function ReptileSuppliesPage() {
             {orderItems.length > 0 ? (
               <ul>
                 {orderItems.map((item) => (
-                  <li key={item.id} className={styles.dropdownItem}>
-                    <Image src={item.image} alt={item.name} width={50} height={50} />
+                  <li key={item._id} className={styles.dropdownItem}>
+                    <Image src={item.imageUrl} alt={item.name} width={50} height={50} />
                     <span>{item.name}</span> - <span>${item.price}</span>
                   </li>
                 ))}
@@ -247,7 +322,7 @@ export default function ReptileSuppliesPage() {
                   <div key={product._id} className="flex flex-col items-center bg-white p-4 rounded-lg shadow-md">
                     <Image src={product.imageUrl} alt={product.name} width={200} height={200} className="w-full h-48 object-cover mb-4" />
                     <h3 className="text-lg font-medium text-gray-900">{product.name}</h3>
-                    <p className="mt-2 text-gray-600">${product.price.toFixed(2)}</p>
+                    <p className="mt-2 text-gray-600">{product.price}</p>
                     <button
                       className="mt-4 bg-blue-500 text-white py-2 px-4 rounded-lg"
                       onClick={() => handleAddToCart(product)}

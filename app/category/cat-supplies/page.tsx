@@ -1,37 +1,40 @@
 'use client';
 
 import Image from 'next/image';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faShoppingCart, faClipboardList, faSadTear } from '@fortawesome/free-solid-svg-icons';
 import styles from '../../page.module.css';
+import { useAuth } from '../../contexts/AuthContext'; // Adjust the path as needed
+
 
 // Types for product data
 type ProductItem = {
-  _id: string;
+  _id: string; // Change from number to string
   name: string;
-  price: number;
+  price: string;
   imageUrl: string;
+  description: string;
   category: string;
   subCategory: string;
-  description: string;
 };
 
 type CartItem = {
-  id: string;
+  _id: string; // Change from number to string
   name: string;
-  price: number;
-  image: string;
+  price: string;
+  imageUrl: string;
 };
 
 type OrderItem = {
-  id: string;
+  _id: string; // Change from number to string
   name: string;
-  price: number;
-  image: string;
+  price: string;
+  imageUrl: string;
 };
 
 export default function CatSuppliesPage() {
+  const { user, setUser } = useAuth();
   const [products, setProducts] = useState<ProductItem[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
   const [filteredProducts, setFilteredProducts] = useState<ProductItem[]>([]);
@@ -95,15 +98,87 @@ export default function CatSuppliesPage() {
     }));
   };
 
-  const handleAddToCart = (product: ProductItem) => {
-    const newCartItem: CartItem = {
-      id: product._id,
-      name: product.name,
-      price: product.price,
-      image: product.imageUrl,
-    };
-    setCartItems(prevCartItems => [...prevCartItems, newCartItem]);
+  const handleAddToCart = async (product: ProductItem) => {
+    if (!user) {
+      console.log('User is not logged in');
+      return; // Ensure user is logged in
+    }
+
+    console.log('Adding product to cart:', product._id);
+
+    try {
+      // Add product to cart in backend
+      await fetch('http://localhost:5000/api/users/add-to-cart', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: user._id,
+          productId: product._id,
+        }),
+      });
+
+      // Update cart items state
+      const updatedCartItems = [...cartItems];
+      const existingItemIndex = updatedCartItems.findIndex(item => item._id === product._id);
+
+      if (existingItemIndex < 0) {
+        updatedCartItems.push({
+          _id: product._id,
+          name: product.name,
+          price: product.price,
+          imageUrl: product.imageUrl,
+        });
+      }
+      
+      setCartItems(updatedCartItems);
+
+      // Update cart in AuthContext
+      setUser(prevUser => {
+        const updatedUser = prevUser ? {
+          ...prevUser,
+          cart: {
+            ...(prevUser.cart || {}),
+            [product._id]: 1,
+          },
+        } : null;
+        console.log('Updated user in context:', updatedUser);
+        return updatedUser;
+      });
+    } catch (error) {
+      console.error('Error adding product to cart:', error);
+    }
   };
+
+  const fetchCartItems = useCallback(async () => {
+    if (cartVisible && user && user.cart.length > 0) {
+      try {
+        const response = await fetch('http://localhost:5000/api/products/products/by-ids', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ ids: user.cart }),
+        });
+        if (!response.ok) {
+          throw new Error('Failed to fetch cart items');
+        }
+        const fetchedCartItems: CartItem[] = await response.json();
+  
+        setCartItems(fetchedCartItems);
+      } catch (error) {
+        console.error('Error fetching cart items:', error);
+      }
+    }
+  }, [cartVisible, user]);
+  
+  
+
+  useEffect(() => {
+    fetchCartItems();
+  }, [fetchCartItems]);
+  
 
   const scrollToDynamicProducts = () => {
     const section = document.getElementById('dynamic-products');
@@ -127,8 +202,8 @@ export default function CatSuppliesPage() {
             {cartItems.length > 0 ? (
               <ul>
                 {cartItems.map(item => (
-                  <li key={item.id} className={styles.dropdownItem}>
-                    <Image src={item.image} alt={item.name} width={50} height={50} />
+                  <li key={item._id} className={styles.dropdownItem}>
+                    <Image src={item.imageUrl} alt={item.name} width={50} height={50} />
                     <span>{item.name}</span> - <span>{item.price}</span>
                   </li>
                 ))}
@@ -150,8 +225,8 @@ export default function CatSuppliesPage() {
             {orderItems.length > 0 ? (
               <ul>
                 {orderItems.map(item => (
-                  <li key={item.id} className={styles.dropdownItem}>
-                    <Image src={item.image} alt={item.name} width={50} height={50} />
+                  <li key={item._id} className={styles.dropdownItem}>
+                    <Image src={item.imageUrl} alt={item.name} width={50} height={50} />
                     <span>{item.name}</span> - <span>{item.price}</span>
                   </li>
                 ))}
@@ -236,33 +311,33 @@ export default function CatSuppliesPage() {
               {selectedProduct} Items
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {filteredProducts.length > 0 ? (
-                filteredProducts.map(item => (
-                  <div key={item._id} className="bg-white shadow rounded-lg p-4">
-                    <Image src={item.imageUrl} alt={item.name} width={200} height={200} className="w-full h-48 object-cover mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900">{item.name}</h3>
-                    <p className="text-gray-600 mb-2">{item.description}</p>
-                    <div className="flex items-center justify-between">
-                      <span className="text-lg font-bold">${item.price.toFixed(2)}</span>
-                      <input
-                        type="number"
-                        min="1"
-                        value={quantities[item._id] || 1}
-                        onChange={(e) => handleQuantityChange(item._id, parseInt(e.target.value))}
-                        className="w-16 p-1 border rounded"
-                      />
-                      <button
-                        className="bg-blue-500 text-white py-2 px-4 rounded"
-                        onClick={() => handleAddToCart(item)}
-                      >
-                        Add to Cart
-                      </button>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <p className="text-center text-gray-600">No products available.</p>
-              )}
+            {filteredProducts.map(product => (
+                <div key={product._id} className="bg-white shadow rounded-lg p-4">
+                  <Image
+                    src={product.imageUrl}
+                    alt={product.name}
+                    width={200}
+                    height={200}
+                    className="w-full h-32 object-cover"
+                  />
+                  <h3 className="text-lg font-semibold mt-4">{product.name}</h3>
+                  <p className="text-gray-700">{product.description}</p>
+                  <p className="text-gray-900 font-bold mt-2">${product.price}</p>
+                  <input
+                    type="number"
+                    min="1"
+                    value={quantities[product._id] || 1}
+                    onChange={(e) => handleQuantityChange(product._id, parseInt(e.target.value, 10))}
+                    className="mt-2 p-2 border rounded"
+                  />
+                  <button
+                    onClick={() => handleAddToCart(product)}
+                    className="mt-4 bg-blue-500 text-white py-2 px-4 rounded"
+                  >
+                    Add to Cart
+                  </button>
+                </div>
+              ))}
             </div>
           </div>
         </section>

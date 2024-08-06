@@ -1,13 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faShoppingCart, faClipboardList, faSadTear } from '@fortawesome/free-solid-svg-icons';
 import styles from '../../page.module.css';
+import { useAuth } from '../../contexts/AuthContext'; // Adjust the path as needed
 
+
+// Types for product data
 type ProductItem = {
-  id: number;
+  _id: string; // Change from number to string
   name: string;
   price: string;
   imageUrl: string;
@@ -17,19 +20,18 @@ type ProductItem = {
 };
 
 type CartItem = {
-  id: number;
+  _id: string; // Change from number to string
   name: string;
   price: string;
-  image: string;
+  imageUrl: string;
 };
 
 type OrderItem = {
-  id: number;
+  _id: string; // Change from number to string
   name: string;
   price: string;
-  image: string;
+  imageUrl: string;
 };
-
 const categories = [
   { name: 'Bird Cages', value: 'Bird Cages' },
   { name: 'Bird Food', value: 'Bird Food' },
@@ -38,10 +40,11 @@ const categories = [
 ];
 
 export default function BirdSuppliesPage() {
+  const { user, setUser } = useAuth();
   const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
   const [products, setProducts] = useState<ProductItem[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<ProductItem[]>([]);
-  const [quantities, setQuantities] = useState<{ [key: number]: number }>({});
+  const [quantities, setQuantities] = useState<{ [key: string]: number }>({});
   const [cartVisible, setCartVisible] = useState(false);
   const [ordersVisible, setOrdersVisible] = useState(false);
 
@@ -97,22 +100,92 @@ export default function BirdSuppliesPage() {
     setSelectedProduct(null);
   };
 
-  const handleQuantityChange = (productId: number, newQuantity: number) => {
+  const handleQuantityChange = (productId: string, newQuantity: number) => {
     setQuantities(prevQuantities => ({
       ...prevQuantities,
       [productId]: newQuantity,
     }));
   };
+  
 
-  const handleAddToCart = (product: ProductItem) => {
-    const newCartItem: CartItem = {
-      id: product.id,
-      name: product.name,
-      price: product.price,
-      image: product.imageUrl,
-    };
-    setCartItems(prevCartItems => [...prevCartItems, newCartItem]);
+  const handleAddToCart = async (product: ProductItem) => {
+    if (!user) {
+      console.log('User is not logged in');
+      return; // Ensure user is logged in
+    }
+
+    console.log('Adding product to cart:', product._id);
+
+    try {
+      // Add product to cart in backend
+      await fetch('http://localhost:5000/api/users/add-to-cart', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: user._id,
+          productId: product._id,
+        }),
+      });
+
+      // Update cart items state
+      const updatedCartItems = [...cartItems];
+      const existingItemIndex = updatedCartItems.findIndex(item => item._id === product._id);
+
+      if (existingItemIndex < 0) {
+        updatedCartItems.push({
+          _id: product._id,
+          name: product.name,
+          price: product.price,
+          imageUrl: product.imageUrl,
+        });
+      }
+      
+      setCartItems(updatedCartItems);
+
+      // Update cart in AuthContext
+      setUser(prevUser => {
+        const updatedUser = prevUser ? {
+          ...prevUser,
+          cart: {
+            ...(prevUser.cart || {}),
+            [product._id]: 1,
+          },
+        } : null;
+        console.log('Updated user in context:', updatedUser);
+        return updatedUser;
+      });
+    } catch (error) {
+      console.error('Error adding product to cart:', error);
+    }
   };
+
+  const fetchCartItems = useCallback(async () => {
+    if (cartVisible && user && user.cart.length > 0) {
+      try {
+        const response = await fetch('http://localhost:5000/api/products/products/by-ids', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ ids: user.cart }),
+        });
+        if (!response.ok) {
+          throw new Error('Failed to fetch cart items');
+        }
+        const fetchedCartItems: CartItem[] = await response.json();
+  
+        setCartItems(fetchedCartItems);
+      } catch (error) {
+        console.error('Error fetching cart items:', error);
+      }
+    }
+  }, [cartVisible, user]);
+  useEffect(() => {
+    fetchCartItems();
+  }, [fetchCartItems]);
+  
 
   const scrollToDynamicProducts = () => {
     const section = document.getElementById('dynamic-products');
@@ -136,8 +209,8 @@ export default function BirdSuppliesPage() {
             {cartItems.length > 0 ? (
               <ul>
                 {cartItems.map(item => (
-                  <li key={item.id} className={styles.dropdownItem}>
-                    <Image src={item.image} alt={item.name} width={50} height={50} />
+                  <li key={item._id} className={styles.dropdownItem}>
+                    <Image src={item.imageUrl} alt={item.name} width={50} height={50} />
                     <span>{item.name}</span> - <span>{item.price}</span>
                   </li>
                 ))}
@@ -159,8 +232,8 @@ export default function BirdSuppliesPage() {
             {orderItems.length > 0 ? (
               <ul>
                 {orderItems.map(item => (
-                  <li key={item.id} className={styles.dropdownItem}>
-                    <Image src={item.image} alt={item.name} width={50} height={50} />
+                  <li key={item._id} className={styles.dropdownItem}>
+                    <Image src={item.imageUrl} alt={item.name} width={50} height={50} />
                     <span>{item.name}</span> - <span>{item.price}</span>
                   </li>
                 ))}
@@ -245,7 +318,7 @@ export default function BirdSuppliesPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
               {filteredProducts.length > 0 ? (
                 filteredProducts.map(product => (
-                  <div key={product.id} className="bg-white shadow rounded-lg p-4">
+                  <div key={product._id} className="bg-white shadow rounded-lg p-4">
                     <Image src={product.imageUrl} alt={product.name} width={200} height={200} className="w-full h-32 object-cover" />
                     <h3 className="text-lg font-semibold mt-4">{product.name}</h3>
                     <p className="text-gray-700">{product.description}</p>
@@ -254,8 +327,8 @@ export default function BirdSuppliesPage() {
                       <input
                         type="number"
                         min="1"
-                        value={quantities[product.id] || 1}
-                        onChange={(e) => handleQuantityChange(product.id, parseInt(e.target.value))}
+                        value={quantities[product._id] || 1}
+                        onChange={(e) => handleQuantityChange(product._id, parseInt(e.target.value))}
                         className="w-16 p-2 border border-gray-300 rounded-lg"
                       />
                       <button

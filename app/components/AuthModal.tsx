@@ -1,8 +1,15 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext'; // Import your context
 import SuccessAnimation from './SuccessAnimation'; // Import the animation component
 import { FaTimes, FaCheckCircle } from 'react-icons/fa';
+import peekingCat from '../animations/peekingCat.json'; // Import the peeking cat animation
+import Lottie from 'react-lottie';
 
+// Define possible positions for the peeking cat animation
+const positions = [
+  { bottom: '1px', left: '10px', transform: 'translate(0, 0)' }, // Bottom-left
+  { bottom: '1px', right: '10px', transform: 'translate(0, 0)' }, // Bottom-right
+];
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -18,8 +25,15 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin }) => {
   const [message, setMessage] = useState('');
   const { setUser } = useAuth(); // Use the context
   const [showSuccess, setShowSuccess] = useState(false); // State for showing success animation
+  const [animationStyle, setAnimationStyle] = useState({}); // State for animation position
 
-
+  useEffect(() => {
+    if (isOpen) {
+      // Randomly select a position
+      const randomPosition = positions[Math.floor(Math.random() * positions.length)];
+      setAnimationStyle(randomPosition);
+    }
+  }, [isOpen]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,16 +89,25 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin }) => {
     }
   };
 
+  // Define default options for the Lottie animation
+  const defaultOptions = {
+    loop: true,
+    autoplay: true,
+    animationData: peekingCat,
+  };
+
   return (
     isOpen && (
       <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-        <div className="bg-white p-8 rounded-md shadow-md">
-          {showSuccess ? (
-            <SuccessAnimation /> // Show animation on success
-          ) : (
-            <>
-              <h2 className="text-2xl font-bold mb-4">{isLogin ? 'Login' : 'Sign Up'}</h2>
-              <form onSubmit={isLogin ? handleLogin : handleSignup}>
+        <div className="bg-white p-8 rounded-md shadow-md relative"> {/* Added relative positioning */}
+        {showSuccess ? (
+      <div className="successAnimationContainer">
+        <SuccessAnimation />
+      </div>
+    ) : (
+      <>
+        <h2 className="text-2xl font-bold mb-4">{isLogin ? 'Login' : 'Sign Up'}</h2>
+        <form onSubmit={isLogin ? handleLogin : handleSignup}>
                 {!isLogin && (
                   <input
                     type="text"
@@ -113,7 +136,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin }) => {
                 />
                 <button
                   type="submit"
-                  className="w-full bg-blue-500 text-white p-2 rounded-md mb-4"
+                  className="w-full bg-black text-white p-2 rounded-md mb-4" // Changed to black
                 >
                   {isLogin ? 'Login' : 'Sign Up'}
                 </button>
@@ -121,17 +144,29 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin }) => {
               {message && <p className="text-red-500">{message}</p>}
               <button
                 onClick={() => setIsLogin(!isLogin)}
-                className="w-full text-blue-500"
+                className="w-full text-black-500"
               >
                 {isLogin ? 'Need an account? Sign Up' : 'Have an account? Login'}
               </button>
             </>
           )}
-        </div>
+          {/* Conditionally render peeking cat animation */}
+          {!showSuccess && (
+      <div 
+        className="absolute" 
+        style={{ 
+          ...animationStyle,
+          width: '150px', 
+          height: '150px' 
+        }}
+      >
+        <Lottie options={defaultOptions} height={150} width={150} />
       </div>
+    )}
+  </div>
+</div>
     )
   );
 };
-
 
 export default AuthModal;

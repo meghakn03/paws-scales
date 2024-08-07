@@ -1,5 +1,5 @@
 import React from 'react';
-import styles from './SuccessAnimation.module.css'; // Create a CSS module for the animation styles
+import styles from './SuccessAnimation.module.css'; // Import the CSS module
 
 const SuccessAnimation: React.FC = () => {
   return (

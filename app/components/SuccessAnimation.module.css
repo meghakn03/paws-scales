@@ -1,48 +1,48 @@
+/* SuccessAnimation.module.css */
 .animationContainer {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    width: 100%;
-    position: absolute;
-    top: 0;
-    left: 0;
-    background: rgba(0, 0, 0, 0.5); /* Optional: Add a semi-transparent background */
+  width: 150px; /* Fixed size */
+  height: 150px; /* Fixed size */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  background-color: transparent; /* Ensure the container is transparent */
+}
+
+.successCheckmark {
+  width: 100px; /* Adjust as needed */
+  height: 100px; /* Adjust as needed */
+  border-radius: 50%;
+  background-color: #0b0b0b; /* Green background */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.checkIcon {
+  width: 40px; /* Adjust as needed */
+  height: 20px; /* Adjust as needed */
+  border-left: 5px solid white;
+  border-bottom: 5px solid white;
+  transform: rotate(-45deg);
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7);
   }
-  
-  .successCheckmark {
-    width: 100px;
-    height: 100px;
-    border-radius: 50%;
-    background-color: #4caf50;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    animation: pulse 1.2s infinite ease-in-out;
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 10px rgba(76, 175, 80, 0);
   }
-  
-  .checkIcon {
-    width: 40px;
-    height: 20px;
-    border-left: 5px solid white;
-    border-bottom: 5px solid white;
-    transform: rotate(-45deg);
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(76, 175, 80, 0);
   }
-  
-  @keyframes pulse {
-    0% {
-      transform: scale(0.95);
-      box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7);
-    }
-  
-    70% {
-      transform: scale(1);
-      box-shadow: 0 0 0 10px rgba(76, 175, 80, 0);
-    }
-  
-    100% {
-      transform: scale(0.95);
-      box-shadow: 0 0 0 0 rgba(76, 175, 80, 0);
-    }
-  }
-  
+}
+
+.successCheckmark {
+  animation: pulse 1.2s infinite ease-in-out;
+}

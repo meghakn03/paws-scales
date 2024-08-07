@@ -11,6 +11,9 @@ import AuthModal from './components/AuthModal';
 import AccountModal from './components/AccountModal'; // Import AccountModal
 import { useAuth } from './contexts/AuthContext'; // Adjust the path as needed
 import PlaceOrderButton from './components/PlaceOrderButton';
+import Lottie from 'react-lottie';
+import loadingAnimation from './animations/loadingAnimation.json';
+import LottieLoader from './components/LottieLoader';
 
 type OrderItem = {
   _id: string; // Change from number to string
@@ -53,6 +56,11 @@ export default function Home() {
   const [showLoginPrompt, setShowLoginPrompt] = useState(false); // Show login prompt after logout
   const [cartVisible, setCartVisible] = useState(false);
   const [showNoItemsMessage, setShowNoItemsMessage] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [loadingCart, setLoadingCart] = useState(false);
+const [loadingProfile, setLoadingProfile] = useState(false);
+const [loadingOrders, setLoadingOrders] = useState(false);
+
 
 
   const cartRef = useRef<HTMLDivElement>(null);
@@ -114,6 +122,7 @@ export default function Home() {
   const fetchCartItems = useCallback(async () => {
     console.log('Fetching cart items:', user?.cart);
     if (cartVisible && user && user.cart.length > 0) {
+      setLoadingCart(true); // Set loadingCart to true
       try {
         const response = await fetch('http://localhost:5000/api/products/products/by-ids', {
           method: 'POST',
@@ -129,6 +138,8 @@ export default function Home() {
         setCartItems(fetchedCartItems);
       } catch (error) {
         console.error('Error fetching cart items:', error);
+      } finally {
+        setLoadingCart(false); // Set loadingCart to false
       }
     } else {
       // Set cartItems to an empty array if there are no items in the cart
@@ -138,6 +149,7 @@ export default function Home() {
 
   const fetchOrderItems = useCallback(async () => {
     if (user && user.orders.length > 0) {
+      setLoadingOrders(true); // Set loadingOrders to true
       try {
         // Fetch orders by IDs
         const ordersResponse = await fetch('http://localhost:5000/api/orders/orders', {
@@ -171,12 +183,13 @@ export default function Home() {
         setOrders(products);
       } catch (error) {
         console.error('Error fetching orders and products:', error);
+      } finally {
+        setLoadingOrders(false); // Set loadingOrders to false
       }
     } else {
       setOrders([]);
     }
   }, [user]);
-  
   
   
   useEffect(() => {
@@ -239,134 +252,151 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="relative z-20"> {/* Ensure this has a higher z-index */}
-        <div className="flex justify-between items-center p-4">
-          <h1 className="text-3xl font-bold text-gray-900">Paws & Scales</h1>
-          {isLoggedIn && (
-            <div className="flex items-center space-x-4">
-              <div className={`relative flex flex-col items-center ${styles.iconContainer}`}>
-                <div className="flex flex-col items-center cursor-pointer" onClick={toggleSearch}>
-                  <FaSearch className="text-2xl text-gray-900" />
-                  <span className="text-sm text-gray-900">Search</span>
-                </div>
-                {searchOpen && (
-                  <div ref={searchRef} className={`${styles.dropdown} absolute right-0 mt-2`}>
-                    <input
-                      type="text"
-                      placeholder="Search..."
-                      className="w-full p-2 border border-gray-300 rounded-md"
-                    />
-                  </div>
-                )}
-              </div>
-              <div className={`relative flex flex-col items-center ${styles.iconContainer}`}>
-  <div className="flex flex-col items-center cursor-pointer" onClick={() => { toggleCart(); fetchCartItems(); }}>
-    <FaShoppingCart className="text-2xl text-gray-900" />
-    <span className="text-sm text-gray-900">Cart</span>
-  </div>
-  {cartOpen && (
-      <div ref={cartRef} className={`${styles.dropdown} ${styles.dropdownScroll}`}>
-        {cartItems.length === 0 ? (
-          <div className={`${styles.emptyMessage}`}>
-            <FaSadTear className="text-3xl text-gray-500 mx-auto" />
-            <p className="text-gray-500">{showNoItemsMessage ? 'No more items in cart' : 'Cart is empty'}</p>
+     <header className="relative z-20"> {/* Ensure this has a higher z-index */}
+  <div className="flex justify-between items-center p-4">
+    <h1 className="text-3xl font-bold text-gray-900">Paws & Scales</h1>
+    {isLoggedIn && (
+      <div className="flex items-center space-x-4">
+        {/* Search Dropdown */}
+        <div className={`relative flex flex-col items-center ${styles.iconContainer}`}>
+          <div className="flex flex-col items-center cursor-pointer" onClick={toggleSearch}>
+            <FaSearch className="text-2xl text-gray-900" />
+            <span className="text-sm text-gray-900">Search</span>
           </div>
-        ) : (
-          <>
-            <ul>
-              {cartItems.map((item) => (
-                <li key={item._id} className={`${styles.dropdownItem}`}>
-                  <Image src={item.imageUrl} alt={item.name} width={50} height={50} className="w-12 h-12 object-cover" />
-                  <div>
-                    <p className="text-gray-900 font-medium">{item.name}</p>
-                    <p className="text-gray-600">${item.price}</p>
-                  </div>
-                </li>
-              ))}
-            </ul>
-            {user && ( // Ensure user is defined before rendering PlaceOrderButton
-            <PlaceOrderButton 
-              userId={user._id} 
-              cartItems={cartItems} 
-              totalAmount={cartItems.reduce((sum, item) => sum + parseFloat(item.price), 0)}
-              onOrderPlaced={handleOrderPlaced} // Pass the callback
-            />
-          )}
-          </>
-        )}
-      </div>
-    )}
-</div>
-
-              <div className={`relative flex flex-col items-center ${styles.iconContainer}`}>
-                <div className="flex flex-col items-center cursor-pointer" onClick={toggleProfile}>
-                  <FaUserCircle className="text-2xl text-gray-900" />
-                  <span className="text-sm text-gray-900">Profile</span>
-                </div>
-                {profileOpen && (
-                  <div ref={profileRef} className={`${styles.dropdown} absolute right-0 mt-2`}>
-                    <ul>
-                    <li className="p-4 border-b border-gray-200 cursor-pointer hover:bg-gray-100" onClick={openAccountModal}>Account</li>
-                    <li className="p-4 border-b border-gray-200 cursor-pointer hover:bg-gray-100">Privacy and Security</li>
-                      <li className="p-4 border-b border-gray-200 cursor-pointer hover:bg-gray-100">Help</li>
-                      <li className="p-4 border-b border-gray-200 cursor-pointer hover:bg-gray-100">Customer Contact</li>
-                      <li className="p-4 cursor-pointer hover:bg-gray-100" onClick={handleLogout}>Log Out</li>
-                    </ul>
-                  </div>
-                )}
-              </div>
-              <div className={`relative flex flex-col items-center ${styles.iconContainer}`}>
-                <div className="flex flex-col items-center cursor-pointer" onClick={toggleOrders}>
-                  <FaBox className="text-2xl text-gray-900" />
-                  <span className="text-sm text-gray-900">Orders</span>
-                </div>
-                {ordersOpen && (
- <div ref={ordersRef} className={`${styles.dropdown} absolute right-0 mt-2`}>
- {orders.length === 0 ? (
-   <div className={styles.emptyMessage}>You have no orders</div>
- ) : (
-   <div className={styles.dropdownScroll}>
-     {orders.map((order) => (
-       <div key={order._id} className={styles.dropdownItem}>
-         <Image src={order.imageUrl} alt={order.name} width={50} height={50} />
-         <span>{order.name}</span>
-         <span>${order.price}</span>
-       </div>
-     ))}
-   </div>
- )}
-</div>
-
-)}
-
-              </div>
-              <div className={`relative flex flex-col items-center ${styles.iconContainer}`}>
-                <div className="flex flex-col items-center cursor-pointer" onClick={openModal}>
-                  <FaPlus className="text-2xl text-gray-900" />
-                  <span className="text-sm text-gray-900">Sell Product</span>
-                </div>
-              </div>
-              <div className={`relative flex flex-col items-center ${styles.iconContainer}`}>
-                <div className="flex flex-col items-center cursor-pointer" onClick={openYourProductsModal}>
-                  <FaBox className="text-2xl text-gray-900" />
-                  <span className="text-sm text-gray-900">Your Products</span>
-                </div>
-              </div>
-            </div>
-          )}
-          {!isLoggedIn && (
-            <div className="flex items-center space-x-4">
-              <button
-                className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-md shadow-sm hover:bg-gray-100"
-                onClick={handleLoginPrompt}
-              >
-                <FaSignInAlt className="text-lg text-gray-900" />
-                <span className="text-gray-900">Log In</span>
-              </button>
+          {searchOpen && (
+            <div ref={searchRef} className={`${styles.dropdown} absolute right-0 mt-2`}>
+              <input
+                type="text"
+                placeholder="Search..."
+                className="w-full p-2 border border-gray-300 rounded-md"
+              />
             </div>
           )}
         </div>
-      </header>
+
+        {/* Cart Dropdown */}
+        <div className={`relative flex flex-col items-center ${styles.iconContainer}`}>
+          <div className="flex flex-col items-center cursor-pointer" onClick={() => { toggleCart(); fetchCartItems(); }}>
+            <FaShoppingCart className="text-2xl text-gray-900" />
+            <span className="text-sm text-gray-900">Cart</span>
+          </div>
+          {cartOpen && (
+            <div ref={cartRef} className={`${styles.dropdown} ${styles.dropdownScroll}`}>
+              {loadingCart ? ( // Check if loadingCart is true to show the loader
+                <LottieLoader /> // Display the loader
+              ) : cartItems.length === 0 ? (
+                <div className={`${styles.emptyMessage}`}>
+                  <FaSadTear className="text-3xl text-gray-500 mx-auto" />
+                  <p className="text-gray-500">{showNoItemsMessage ? 'No more items in cart' : 'Cart is empty'}</p>
+                </div>
+              ) : (
+                <>
+                  <ul>
+                    {cartItems.map((item) => (
+                      <li key={item._id} className={`${styles.dropdownItem}`}>
+                        <Image src={item.imageUrl} alt={item.name} width={50} height={50} className="w-12 h-12 object-cover" />
+                        <div>
+                          <p className="text-gray-900 font-medium">{item.name}</p>
+                          <p className="text-gray-600">${item.price}</p>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                  {user && ( // Ensure user is defined before rendering PlaceOrderButton
+                    <PlaceOrderButton 
+                      userId={user._id} 
+                      cartItems={cartItems} 
+                      totalAmount={cartItems.reduce((sum, item) => sum + parseFloat(item.price), 0)}
+                      onOrderPlaced={handleOrderPlaced} // Pass the callback
+                    />
+                  )}
+                </>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Profile Dropdown */}
+        <div className={`relative flex flex-col items-center ${styles.iconContainer}`}>
+          <div className="flex flex-col items-center cursor-pointer" onClick={toggleProfile}>
+            <FaUserCircle className="text-2xl text-gray-900" />
+            <span className="text-sm text-gray-900">Profile</span>
+          </div>
+          {profileOpen && (
+            <div ref={profileRef} className={`${styles.dropdown} absolute right-0 mt-2`}>
+              {loadingProfile ? ( // Check if loadingProfile is true to show the loader
+                <LottieLoader /> // Display the loader
+              ) : (
+                <ul>
+                  <li className="p-4 border-b border-gray-200 cursor-pointer hover:bg-gray-100" onClick={openAccountModal}>Account</li>
+                  <li className="p-4 border-b border-gray-200 cursor-pointer hover:bg-gray-100">Privacy and Security</li>
+                  <li className="p-4 border-b border-gray-200 cursor-pointer hover:bg-gray-100">Help</li>
+                  <li className="p-4 border-b border-gray-200 cursor-pointer hover:bg-gray-100">Customer Contact</li>
+                  <li className="p-4 cursor-pointer hover:bg-gray-100" onClick={handleLogout}>Log Out</li>
+                </ul>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Orders Dropdown */}
+        <div className={`relative flex flex-col items-center ${styles.iconContainer}`}>
+          <div className="flex flex-col items-center cursor-pointer" onClick={toggleOrders}>
+            <FaBox className="text-2xl text-gray-900" />
+            <span className="text-sm text-gray-900">Orders</span>
+          </div>
+          {ordersOpen && (
+            <div ref={ordersRef} className={`${styles.dropdown} absolute right-0 mt-2`}>
+              {loadingOrders ? ( // Check if loadingOrders is true to show the loader
+                <LottieLoader /> // Display the loader
+              ) : orders.length === 0 ? (
+                <div className={styles.emptyMessage}>You have no orders</div>
+              ) : (
+                <div className={styles.dropdownScroll}>
+                  {orders.map((order) => (
+                    <div key={order._id} className={styles.dropdownItem}>
+                      <Image src={order.imageUrl} alt={order.name} width={50} height={50} />
+                      <span>{order.name}</span>
+                      <span>${order.price}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Sell Product Dropdown */}
+        <div className={`relative flex flex-col items-center ${styles.iconContainer}`}>
+          <div className="flex flex-col items-center cursor-pointer" onClick={openModal}>
+            <FaPlus className="text-2xl text-gray-900" />
+            <span className="text-sm text-gray-900">Sell Product</span>
+          </div>
+        </div>
+
+        {/* Your Products Dropdown */}
+        <div className={`relative flex flex-col items-center ${styles.iconContainer}`}>
+          <div className="flex flex-col items-center cursor-pointer" onClick={openYourProductsModal}>
+            <FaBox className="text-2xl text-gray-900" />
+            <span className="text-sm text-gray-900">Your Products</span>
+          </div>
+        </div>
+      </div>
+    )}
+    {!isLoggedIn && (
+      <div className="flex items-center space-x-4">
+        <button
+          className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-md shadow-sm hover:bg-gray-100"
+          onClick={handleLoginPrompt}
+        >
+          <FaSignInAlt className="text-lg text-gray-900" />
+          <span className="text-gray-900">Log In</span>
+        </button>
+      </div>
+    )}
+  </div>
+</header>
+
       {/* Hero Section with Video */}
       <section className={`${styles.hero} relative z-0`}>
         <video

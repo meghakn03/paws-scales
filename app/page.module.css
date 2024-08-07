@@ -278,3 +278,64 @@
 .iconButton:hover .icon {
   transform: scale(1.2); /* Enlarges the icon on hover */
 }
+
+/* app/page.module.css */
+
+.dropdown {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  width: 300px;
+  background-color: white;
+  border: 1px solid #ccc;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  padding: 10px;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+}
+
+.dropdownScroll {
+  max-height: 200px; /* Adjust height as needed */
+  overflow-y: auto;
+  padding-bottom: 10px; /* Padding to make room for the fixed button */
+}
+
+.dropdownItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.dropdownItem:last-child {
+  border-bottom: none;
+}
+
+.emptyMessage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 0;
+}
+
+.placeOrderButton {
+  width: 100%;
+  padding: 10px;
+  background-color: #4CAF50;
+  color: white;
+  text-align: center;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-top: 10px;
+  position: sticky;
+  bottom: 0;
+}
+
+.placeOrderButton:hover {
+  background-color: #45a049;
+}

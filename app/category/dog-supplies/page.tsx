@@ -209,21 +209,32 @@ export default function DogSuppliesPage() {
         </button>
         {cartVisible && (
           <div className={styles.dropdown}>
-            {cartItems.length > 0 ? (
-              <ul>
-                {cartItems.map(item => (
-                  <li key={item._id} className={styles.dropdownItem}>
-                    <Image src={item.imageUrl} alt={item.name} width={50} height={50} />
-                    <span>{item.name}</span> - <span>{item.price}</span>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <div className={styles.emptyMessage}>
-                <FontAwesomeIcon icon={faSadTear} size="lg" />
-                <p>Empty Cart</p>
-              </div>
-            )}
+         {cartVisible && (
+  <div className={styles.dropdown}>
+    {cartItems.length > 0 ? (
+      <>
+        <div className={styles.dropdownScroll}>
+          <ul>
+            {cartItems.map(item => (
+              <li key={item._id} className={styles.dropdownItem}>
+                <Image src={item.imageUrl} alt={item.name} width={50} height={50} />
+                <span>{item.name}</span> - <span>${item.price}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <button className={styles.placeOrderButton}>Place Order</button>
+      </>
+    ) : (
+      <div className={styles.emptyMessage}>
+        <FontAwesomeIcon icon={faSadTear} size="lg" />
+        <p>Empty Cart</p>
+      </div>
+    )}
+  </div>
+)}
+
+
           </div>
         )}
   

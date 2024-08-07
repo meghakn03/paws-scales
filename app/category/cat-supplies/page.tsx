@@ -194,52 +194,57 @@ export default function CatSuppliesPage() {
     <div>
       {/* Header with Icons */}
       <header className="fixed top-0 right-0 p-4 flex gap-4 z-50">
-        <button className={`${styles.iconButton} p-2 bg-transparent border-none`} onClick={toggleCartVisibility}>
-          <FontAwesomeIcon icon={faShoppingCart} size="lg" className={`${styles.icon} text-white`} />
-        </button>
-        {cartVisible && (
-          <div className={styles.dropdown}>
-            {cartItems.length > 0 ? (
-              <ul>
-                {cartItems.map(item => (
-                  <li key={item._id} className={styles.dropdownItem}>
-                    <Image src={item.imageUrl} alt={item.name} width={50} height={50} />
-                    <span>{item.name}</span> - <span>{item.price}</span>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <div className={styles.emptyMessage}>
-                <FontAwesomeIcon icon={faSadTear} size="lg" />
-                <p>Empty Cart</p>
+      <button className={`${styles.iconButton} p-2 bg-transparent border-none`} onClick={toggleCartVisibility}>
+        <FontAwesomeIcon icon={faShoppingCart} size="lg" className={`${styles.icon} text-white`} />
+      </button>
+      {cartVisible && (
+        <div className={styles.dropdown}>
+          {cartItems.length > 0 ? (
+            <>
+              <div className={styles.dropdownScroll}>
+                <ul>
+                  {cartItems.map(item => (
+                    <li key={item._id} className={styles.dropdownItem}>
+                      <Image src={item.imageUrl} alt={item.name} width={50} height={50} />
+                      <span>{item.name}</span> - <span>${item.price}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
-            )}
-          </div>
-        )}
+              <button className={styles.placeOrderButton}>Place Order</button>
+            </>
+          ) : (
+            <div className={styles.emptyMessage}>
+              <FontAwesomeIcon icon={faSadTear} size="lg" />
+              <p>Empty Cart</p>
+            </div>
+          )}
+        </div>
+      )}
 
-        <button className={`${styles.iconButton} p-2 bg-transparent border-none`} onClick={toggleOrdersVisibility}>
-          <FontAwesomeIcon icon={faClipboardList} size="lg" className={`${styles.icon} text-white`} />
-        </button>
-        {ordersVisible && (
-          <div className={styles.dropdown}>
-            {orderItems.length > 0 ? (
-              <ul>
-                {orderItems.map(item => (
-                  <li key={item._id} className={styles.dropdownItem}>
-                    <Image src={item.imageUrl} alt={item.name} width={50} height={50} />
-                    <span>{item.name}</span> - <span>{item.price}</span>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <div className={styles.emptyMessage}>
-                <FontAwesomeIcon icon={faSadTear} size="lg" />
-                <p>No Orders</p>
-              </div>
-            )}
-          </div>
-        )}
-      </header>
+      <button className={`${styles.iconButton} p-2 bg-transparent border-none`} onClick={toggleOrdersVisibility}>
+        <FontAwesomeIcon icon={faClipboardList} size="lg" className={`${styles.icon} text-white`} />
+      </button>
+      {ordersVisible && (
+        <div className={styles.dropdown}>
+          {orderItems.length > 0 ? (
+            <ul>
+              {orderItems.map(item => (
+                <li key={item._id} className={styles.dropdownItem}>
+                  <Image src={item.imageUrl} alt={item.name} width={50} height={50} />
+                  <span>{item.name}</span> - <span>${item.price}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <div className={styles.emptyMessage}>
+              <FontAwesomeIcon icon={faSadTear} size="lg" />
+              <p>No Orders</p>
+            </div>
+          )}
+        </div>
+      )}
+    </header>
 
       {/* Hero Section with Video */}
       <section className={`${styles.hero} relative`}>

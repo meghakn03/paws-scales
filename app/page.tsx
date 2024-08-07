@@ -1,6 +1,6 @@
 'use client'; // Ensure this component is a client component
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { FaShoppingCart, FaUserCircle, FaBox, FaSadTear, FaSearch, FaPlus, FaSignInAlt } from 'react-icons/fa';
@@ -9,23 +9,32 @@ import SellProductModal from './components/SellProductModal';
 import YourProductsModal from './components/YourProuductsModal';
 import AuthModal from './components/AuthModal';
 import AccountModal from './components/AccountModal'; // Import AccountModal
+import { useAuth } from './contexts/AuthContext'; // Adjust the path as needed
 
+
+type CartItem = {
+  _id: string; // Change from number to string
+  name: string;
+  price: string;
+  imageUrl: string;
+};
 
 export default function Home() {
+  const { user, setUser } = useAuth();
   const [cartOpen, setCartOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [ordersOpen, setOrdersOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false); // For hamburger menu
-  const [cartItems, setCartItems] = useState([]);
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [orders, setOrders] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isYourProductsModalOpen, setIsYourProductsModalOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(true); // Auth modal initially open
   const [isLoggedIn, setIsLoggedIn] = useState(false); // Track login state
-    const [user, setUser] = useState(null);
     const [isAccountModalOpen, setIsAccountModalOpen] = useState(false); // State for AccountModal
     const [showLoginPrompt, setShowLoginPrompt] = useState(false); // Show login prompt after logout
+    const [cartVisible, setCartVisible] = useState(false);
 
 
 
@@ -44,8 +53,11 @@ export default function Home() {
   const closeAccountModal = () => setIsAccountModalOpen(false);
 
 
-  const toggleCart = () => setCartOpen(!cartOpen);
-  const toggleProfile = () => setProfileOpen(!profileOpen);
+  const toggleCart = () => {
+    setCartOpen(!cartOpen);
+    setCartVisible(!cartVisible); // Trigger cart items fetching
+  };
+    const toggleProfile = () => setProfileOpen(!profileOpen);
   const toggleOrders = () => setOrdersOpen(!ordersOpen);
   const toggleSearch = () => setSearchOpen(!searchOpen);
   const toggleMenu = () => setMenuOpen(!menuOpen);
@@ -74,6 +86,34 @@ export default function Home() {
   const handleLoginPrompt = () => {
     setIsAuthModalOpen(true);
   };
+
+  const fetchCartItems = useCallback(async () => {
+    if (cartVisible && user && user.cart.length > 0) {
+      try {
+        const response = await fetch('http://localhost:5000/api/products/products/by-ids', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ ids: user.cart }),
+        });
+        if (!response.ok) {
+          throw new Error('Failed to fetch cart items');
+        }
+        const fetchedCartItems: CartItem[] = await response.json();
+        setCartItems(fetchedCartItems);
+      } catch (error) {
+        console.error('Error fetching cart items:', error);
+      }
+    }
+  }, [cartVisible, user]);
+  
+  useEffect(() => {
+    fetchCartItems();
+  }, [fetchCartItems]);
+  
+ 
+  
   
 
   // Close the dropdowns and menu when clicking outside
@@ -125,29 +165,39 @@ export default function Home() {
                 )}
               </div>
               <div className={`relative flex flex-col items-center ${styles.iconContainer}`}>
-                <div className="flex flex-col items-center cursor-pointer" onClick={toggleCart}>
-                  <FaShoppingCart className="text-2xl text-gray-900" />
-                  <span className="text-sm text-gray-900">Cart</span>
-                </div>
-                {cartOpen && (
-                  <div ref={cartRef} className={`${styles.dropdown} absolute right-0 mt-2`}>
-                    {cartItems.length === 0 ? (
-                      <div className="p-4 text-center">
-                        <FaSadTear className="text-3xl text-gray-500 mx-auto" />
-                        <p className="text-gray-500">Cart is empty</p>
-                      </div>
-                    ) : (
-                      <ul>
-                        {cartItems.map((item, index) => (
-                          <li key={index} className="p-4 border-b border-gray-200">
-                            {item}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                )}
+  <div className="flex flex-col items-center cursor-pointer" onClick={() => { toggleCart(); fetchCartItems(); }}>
+    <FaShoppingCart className="text-2xl text-gray-900" />
+    <span className="text-sm text-gray-900">Cart</span>
+  </div>
+  {cartOpen && (
+    <div ref={cartRef} className={`${styles.dropdown} ${styles.dropdownScroll}`}>
+      {cartItems.length === 0 ? (
+        <div className={`${styles.emptyMessage}`}>
+          <FaSadTear className="text-3xl text-gray-500 mx-auto" />
+          <p className="text-gray-500">Cart is empty</p>
+        </div>
+      ) : (
+        <ul>
+          {cartItems.map((item) => (
+            <li key={item._id} className={`${styles.dropdownItem}`}>
+              <Image src={item.imageUrl} alt={item.name} width={50} height={50} className="w-12 h-12 object-cover" />
+              <div>
+                <p className="text-gray-900 font-medium">{item.name}</p>
+                <p className="text-gray-600">${item.price}</p>
               </div>
+            </li>
+          ))}
+        </ul>
+      )}
+      {cartItems.length > 0 && (
+        <button className={`${styles.placeOrderButton}`}>
+          Place Order
+        </button>
+      )}
+    </div>
+  )}
+</div>
+
               <div className={`relative flex flex-col items-center ${styles.iconContainer}`}>
                 <div className="flex flex-col items-center cursor-pointer" onClick={toggleProfile}>
                   <FaUserCircle className="text-2xl text-gray-900" />

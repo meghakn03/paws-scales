@@ -285,7 +285,7 @@
   position: absolute;
   right: 0;
   top: 100%;
-  width: 300px;
+  width: 350px; /* Increased width */
   background-color: white;
   border: 1px solid #ccc;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
@@ -297,7 +297,7 @@
 }
 
 .dropdownScroll {
-  max-height: 200px; /* Adjust height as needed */
+  max-height: 250px; /* Adjusted height as needed */
   overflow-y: auto;
   padding-bottom: 10px; /* Padding to make room for the fixed button */
 }
@@ -324,7 +324,7 @@
 
 .placeOrderButton {
   width: 100%;
-  padding: 10px;
+  padding: 12px; /* Increased padding */
   background-color: #4CAF50;
   color: white;
   text-align: center;
@@ -334,6 +334,7 @@
   margin-top: 10px;
   position: sticky;
   bottom: 0;
+  font-size: 16px; /* Increased font size */
 }
 
 .placeOrderButton:hover {

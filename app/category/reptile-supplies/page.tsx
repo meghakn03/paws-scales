@@ -6,6 +6,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faShoppingCart, faClipboardList, faSadTear } from '@fortawesome/free-solid-svg-icons';
 import styles from '../../page.module.css';
 import { useAuth } from '../../contexts/AuthContext'; // Adjust the path as needed
+import PlaceOrderButton from '../../components/PlaceOrderButton';
 
 type ProductItem = {
   _id: string; // Change from number to string
@@ -64,6 +65,9 @@ export default function ReptileSuppliesPage() {
 
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
+  const [orderSuccess, setOrderSuccess] = useState(false);
+  const [cartOpen, setCartOpen] = useState(false);
+  const [showNoItemsMessage, setShowNoItemsMessage] = useState(false);
 
   useEffect(() => {
     fetchProducts()
@@ -174,19 +178,25 @@ export default function ReptileSuppliesPage() {
   }, [cartVisible, user]);
   useEffect(() => {
     fetchCartItems();
-  }, [fetchCartItems]);
-
-  //   setCartItems((prevCartItems) => {
-  //     const itemExists = prevCartItems.find((cartItem) => cartItem.id === item._id);
-  //     if (itemExists) {
-  //       return prevCartItems.map((cartItem) =>
-  //         cartItem.id === item._id ? newCartItem : cartItem
-  //       );
-  //     } else {
-  //       return [...prevCartItems, newCartItem];
-  //     }
-  //   });
-  // };
+  }, [fetchCartItems, cartVisible]); // Add cartVisible to dependencies if needed
+  
+  
+  const handleOrderPlaced = async () => {
+    try {
+      // Clear cart items in the frontend
+      setCartItems([]);
+      
+      // Directly update the user object in context
+      if (user) {
+        const updatedUser = { ...user, cart: [] }; // Set cart to empty
+        setUser(updatedUser);
+      }
+      
+      setShowNoItemsMessage(true);
+    } catch (error) {
+      console.error('Error handling order placement:', error);
+    }
+  };
 
   const scrollToProducts = () => {
     const section = document.getElementById('products');
@@ -206,29 +216,32 @@ export default function ReptileSuppliesPage() {
         <FontAwesomeIcon icon={faShoppingCart} size="lg" className={`${styles.icon} text-white`} />
       </button>
       {cartVisible && (
-        <div className={styles.dropdown}>
-          {cartItems.length > 0 ? (
-            <>
-              <div className={styles.dropdownScroll}>
-                <ul>
-                  {cartItems.map((item) => (
-                    <li key={item._id} className={styles.dropdownItem}>
-                      <Image src={item.imageUrl} alt={item.name} width={50} height={50} />
-                      <span>{item.name}</span> - <span>${item.price}</span>
-                    </li>
-                  ))}
-                </ul>
+          <div className={styles.dropdown}>
+            {cartItems.length > 0 ? (
+              <ul>
+                {cartItems.map(item => (
+                  <li key={item._id} className={styles.dropdownItem}>
+                    <Image src={item.imageUrl} alt={item.name} width={50} height={50} />
+                    <span>{item.name}</span> - <span>{item.price}</span>
+                  </li>
+                ))}
+                <div className="text-center mt-4">
+                  <PlaceOrderButton
+                    userId={user?._id || ''}
+                    cartItems={cartItems}
+                    totalAmount={cartItems.reduce((total, item) => total + parseFloat(item.price), 0)}
+                    onOrderPlaced={handleOrderPlaced}
+                  />
+                </div>
+              </ul>
+            ) : (
+              <div className={styles.emptyMessage}>
+                <FontAwesomeIcon icon={faSadTear} size="lg" />
+                <p>Empty Cart</p>
               </div>
-              <button className={styles.placeOrderButton}>Place Order</button>
-            </>
-          ) : (
-            <div className={styles.emptyMessage}>
-              <FontAwesomeIcon icon={faSadTear} size="lg" />
-              <p>Empty Cart</p>
-            </div>
-          )}
-        </div>
-      )}
+            )}
+          </div>
+        )}
 
       <button className={`${styles.iconButton} p-2 bg-transparent border-none`} onClick={toggleOrdersVisibility}>
         <FontAwesomeIcon icon={faClipboardList} size="lg" className={`${styles.icon} text-white`} />

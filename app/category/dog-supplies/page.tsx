@@ -6,6 +6,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faShoppingCart, faClipboardList, faSadTear } from '@fortawesome/free-solid-svg-icons';
 import styles from '../../page.module.css';
 import { useAuth } from '../../contexts/AuthContext'; // Adjust the path as needed
+import PlaceOrderButton from '../../components/PlaceOrderButton';
 
 
 type ProductItem = {
@@ -50,6 +51,17 @@ export default function DogSuppliesPage() {
 
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
+  const [orderSubmitting, setOrderSubmitting] = useState(false);
+const [orderSuccess, setOrderSuccess] = useState(false);
+const [cartOpen, setCartOpen] = useState(false);
+const [showNoItemsMessage, setShowNoItemsMessage] = useState(false);
+
+const toggleCart = () => {
+  setCartOpen(!cartOpen);
+  setCartVisible(!cartVisible); // Trigger cart items fetching
+  fetchCartItems(); // Ensure it is called
+
+};
 
   useEffect(() => {
     fetch('http://localhost:5000/api/products/products')
@@ -186,9 +198,26 @@ export default function DogSuppliesPage() {
 
   useEffect(() => {
     fetchCartItems();
-  }, [fetchCartItems]);
+  }, [fetchCartItems, cartVisible]); // Add cartVisible to dependencies if needed
   
   
+  const handleOrderPlaced = async () => {
+    try {
+      // Clear cart items in the frontend
+      setCartItems([]);
+      
+      // Directly update the user object in context
+      if (user) {
+        const updatedUser = { ...user, cart: [] }; // Set cart to empty
+        setUser(updatedUser);
+      }
+      
+      setShowNoItemsMessage(true);
+    } catch (error) {
+      console.error('Error handling order placement:', error);
+    }
+  };
+
 
   const scrollToDynamicProducts = () => {
     const section = document.getElementById('dynamic-products');
@@ -209,35 +238,32 @@ export default function DogSuppliesPage() {
         </button>
         {cartVisible && (
           <div className={styles.dropdown}>
-         {cartVisible && (
-  <div className={styles.dropdown}>
-    {cartItems.length > 0 ? (
-      <>
-        <div className={styles.dropdownScroll}>
-          <ul>
-            {cartItems.map(item => (
-              <li key={item._id} className={styles.dropdownItem}>
-                <Image src={item.imageUrl} alt={item.name} width={50} height={50} />
-                <span>{item.name}</span> - <span>${item.price}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-        <button className={styles.placeOrderButton}>Place Order</button>
-      </>
-    ) : (
-      <div className={styles.emptyMessage}>
-        <FontAwesomeIcon icon={faSadTear} size="lg" />
-        <p>Empty Cart</p>
-      </div>
-    )}
-  </div>
-)}
-
-
+            {cartItems.length > 0 ? (
+              <ul>
+                {cartItems.map(item => (
+                  <li key={item._id} className={styles.dropdownItem}>
+                    <Image src={item.imageUrl} alt={item.name} width={50} height={50} />
+                    <span>{item.name}</span> - <span>{item.price}</span>
+                  </li>
+                ))}
+                <div className="text-center mt-4">
+                  <PlaceOrderButton
+                    userId={user?._id || ''}
+                    cartItems={cartItems}
+                    totalAmount={cartItems.reduce((total, item) => total + parseFloat(item.price), 0)}
+                    onOrderPlaced={handleOrderPlaced}
+                  />
+                </div>
+              </ul>
+            ) : (
+              <div className={styles.emptyMessage}>
+                <FontAwesomeIcon icon={faSadTear} size="lg" />
+                <p>Empty Cart</p>
+              </div>
+            )}
           </div>
         )}
-  
+
         <button className={`${styles.iconButton} p-2 bg-transparent border-none`} onClick={toggleOrdersVisibility}>
           <FontAwesomeIcon icon={faClipboardList} size="lg" className={`${styles.icon} text-white`} />
         </button>

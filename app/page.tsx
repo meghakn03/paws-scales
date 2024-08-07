@@ -20,6 +20,10 @@ type OrderItem = {
   name: string;
   price: string;
   imageUrl: string;
+  createdAt: string; // Assuming it's a date string, change type if needed
+  status: string;
+  totalAmount: number;
+  products: CartItem[]; // Added to hold products for this order
 };
 
 type CartItem = {
@@ -60,6 +64,8 @@ export default function Home() {
   const [loadingCart, setLoadingCart] = useState(false);
 const [loadingProfile, setLoadingProfile] = useState(false);
 const [loadingOrders, setLoadingOrders] = useState(false);
+const [selectedOrder, setSelectedOrder] = useState<OrderItem | null>(null);
+
 
 
 
@@ -149,23 +155,17 @@ const [loadingOrders, setLoadingOrders] = useState(false);
 
   const fetchOrderItems = useCallback(async () => {
     if (user && user.orders.length > 0) {
-      setLoadingOrders(true); // Set loadingOrders to true
+      setLoadingOrders(true);
       try {
-        // Fetch orders by IDs
-        const ordersResponse = await fetch('http://localhost:5000/api/orders/orders', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ ids: user.orders }),
-        });
+        // Fetch orders by user ID
+        const ordersResponse = await fetch(`http://localhost:5000/api/users/${user._id}/orders`);
         if (!ordersResponse.ok) {
           throw new Error('Failed to fetch orders');
         }
-        const orders = await ordersResponse.json();
+        const ordersData = await ordersResponse.json();
   
         // Extract product IDs from orders
-        const productIds = orders.flatMap((order: any) => order.products);
+        const productIds = ordersData.flatMap((order: any) => order.products);
   
         // Fetch products by IDs
         const productsResponse = await fetch('http://localhost:5000/api/products/products/by-ids', {
@@ -180,16 +180,20 @@ const [loadingOrders, setLoadingOrders] = useState(false);
         }
         const products = await productsResponse.json();
   
-        setOrders(products);
+        setOrders(ordersData.map((order: any) => ({
+          ...order,
+          products: products.filter((product: any) => order.products.includes(product._id)),
+        })));
       } catch (error) {
         console.error('Error fetching orders and products:', error);
       } finally {
-        setLoadingOrders(false); // Set loadingOrders to false
+        setLoadingOrders(false);
       }
     } else {
       setOrders([]);
     }
   }, [user]);
+  
   
   
   useEffect(() => {
@@ -217,6 +221,38 @@ const [loadingOrders, setLoadingOrders] = useState(false);
       setShowNoItemsMessage(true);
     } catch (error) {
       console.error('Error handling order placement:', error);
+    }
+  };
+  
+  const handleOrderClick = async (order: any) => {
+    try {
+      setLoading(true); // Set loading state
+  
+      // If the clicked order is already selected, close the dropdown
+      if (selectedOrder?._id === order._id) {
+        setSelectedOrder(null);
+        return;
+      }
+  
+      const productsResponse = await fetch('http://localhost:5000/api/products/products/by-ids', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ ids: order.products }),
+      });
+  
+      if (!productsResponse.ok) {
+        throw new Error('Failed to fetch products');
+      }
+  
+      const products = await productsResponse.json();
+      setSelectedOrder({ ...order, products });
+  
+    } catch (error) {
+      console.error('Error fetching order products:', error);
+    } finally {
+      setLoading(false); // Reset loading state
     }
   };
   
@@ -338,33 +374,53 @@ const [loadingOrders, setLoadingOrders] = useState(false);
             </div>
           )}
         </div>
-
-        {/* Orders Dropdown */}
-        <div className={`relative flex flex-col items-center ${styles.iconContainer}`}>
-          <div className="flex flex-col items-center cursor-pointer" onClick={toggleOrders}>
-            <FaBox className="text-2xl text-gray-900" />
-            <span className="text-sm text-gray-900">Orders</span>
-          </div>
-          {ordersOpen && (
-            <div ref={ordersRef} className={`${styles.dropdown} absolute right-0 mt-2`}>
-              {loadingOrders ? ( // Check if loadingOrders is true to show the loader
-                <LottieLoader /> // Display the loader
-              ) : orders.length === 0 ? (
-                <div className={styles.emptyMessage}>You have no orders</div>
-              ) : (
-                <div className={styles.dropdownScroll}>
-                  {orders.map((order) => (
-                    <div key={order._id} className={styles.dropdownItem}>
-                      <Image src={order.imageUrl} alt={order.name} width={50} height={50} />
-                      <span>{order.name}</span>
-                      <span>${order.price}</span>
+{/* Orders Dropdown */}
+<div className={`relative flex flex-col items-center ${styles.iconContainer}`}>
+  <div className="flex flex-col items-center cursor-pointer" onClick={toggleOrders}>
+    <FaBox className="text-2xl text-gray-900" />
+    <span className="text-sm text-gray-900 font-semibold">Orders</span>
+  </div>
+  {ordersOpen && (
+    <div ref={ordersRef} className={`${styles.ordersDropdown}`}>
+      {loadingOrders ? (
+        <LottieLoader /> // Display the loader
+      ) : orders.length === 0 ? (
+        <div className={styles.emptyMessage}>You have no orders</div>
+      ) : (
+        <ul className={styles.orderList}>
+          {orders.map((order) => (
+            <li key={order._id} className={`${styles.orderItem} ${selectedOrder?._id === order._id ? styles.selectedOrder : ''}`}>
+              <div className={styles.orderDetails} onClick={() => handleOrderClick(order)}>
+                <div className={styles.orderId}>Order ID: {order._id}</div>
+                <div className={styles.orderDate}>Date: {new Date(order.createdAt).toLocaleDateString()}</div>
+                <div className={styles.orderStatus}>Status: {order.status}</div>
+                <div className={styles.orderAmount}>Total: ${order.totalAmount.toFixed(2)}</div>
+              </div>
+              {selectedOrder?._id === order._id && selectedOrder.products && (
+                <div className={styles.orderProductsDropdown}>
+                  {selectedOrder.products.map((product) => (
+                    <div key={product._id} className={styles.orderProductItem}>
+                      <Image src={product.imageUrl} alt={product.name} width={50} height={50} />
+                      <div className={styles.orderProductDetails}>
+                        <div className={styles.orderProductName}>{product.name}</div>
+                        <div className={styles.orderProductPrice}>${product.price}</div>
+                      </div>
                     </div>
                   ))}
                 </div>
               )}
-            </div>
-          )}
-        </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )}
+</div>
+
+
+
+
+
 
         {/* Sell Product Dropdown */}
         <div className={`relative flex flex-col items-center ${styles.iconContainer}`}>

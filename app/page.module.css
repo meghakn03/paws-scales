@@ -340,3 +340,111 @@
 .placeOrderButton:hover {
   background-color: #45a049;
 }
+
+.orderList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.orderItem {
+  padding: 12px 16px;
+  border-bottom: 1px solid #ddd;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.orderItem:hover {
+  background-color: #f1f1f1;
+}
+
+.orderId, .orderDate, .orderStatus {
+  display: block;
+  font-size: 14px;
+  color: #333;
+  margin-bottom: 4px;
+}
+
+.ordersDropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background-color: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  width: 300px;
+  max-height: 400px; /* Adjust as needed */
+  overflow-y: auto; /* Enable vertical scrolling */
+  z-index: 10;
+}
+
+.orderItem {
+  padding: 10px;
+  border-bottom: 1px solid #ddd;
+  cursor: pointer;
+}
+
+.selectedOrder {
+  background-color: #f9f9f9;
+}
+
+.orderDetails {
+  margin-bottom: 5px;
+}
+
+.orderProductsDropdown {
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 10px;
+  border-top: 1px solid #ddd;
+  background-color: #f9f9f9;
+}
+
+.orderProductItem {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.orderProductItem img {
+  border-radius: 4px;
+  margin-right: 10px;
+}
+
+.orderProductItem div {
+  margin-right: 5px;
+}
+
+.orderProductsDropdown {
+  max-height: 300px; /* Adjust height as needed */
+  overflow-y: auto;
+  padding: 10px;
+  border-top: 1px solid #ddd;
+  background-color: #f9f9f9;
+}
+
+.orderProductItem {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+
+.orderProductItem img {
+  border-radius: 4px;
+  margin-right: 10px;
+}
+
+.orderProductDetails {
+  display: flex;
+  flex-direction: column;
+}
+
+.orderProductName {
+  font-weight: bold;
+}
+
+.orderProductPrice {
+  color: #555;
+  margin-top: 5px;
+}

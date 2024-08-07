@@ -113,7 +113,21 @@ const placeOrder = async (req, res) => {
   }
 };
 
+// Get orders for a user by user ID
+const getUserOrders = async (req, res) => {
+  try {
+      const userId = req.params.id;
+      const user = await User.findById(userId).populate('orders'); // Populate orders based on order IDs
+      if (!user) {
+          return res.status(404).json({ message: 'User not found' });
+      }
+      const orders = user.orders; // Orders are already populated
+      res.json(orders);
+  } catch (error) {
+      res.status(500).json({ message: error.message });
+  }
+};
 
 
 
-module.exports = { registerUser, loginUser, getUserById, updateUser, deleteUser, addToCart, placeOrder };
+module.exports = { registerUser, loginUser, getUserById, updateUser, deleteUser, addToCart, placeOrder, getUserOrders };

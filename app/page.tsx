@@ -12,7 +12,12 @@ import AccountModal from './components/AccountModal'; // Import AccountModal
 import { useAuth } from './contexts/AuthContext'; // Adjust the path as needed
 import PlaceOrderButton from './components/PlaceOrderButton';
 
-
+type OrderItem = {
+  _id: string; // Change from number to string
+  name: string;
+  price: string;
+  imageUrl: string;
+};
 
 type CartItem = {
   _id: string; // Change from number to string
@@ -39,16 +44,15 @@ export default function Home() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false); // For hamburger menu
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [orders, setOrders] = useState([]);
+  const [orders, setOrders] = useState<OrderItem[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isYourProductsModalOpen, setIsYourProductsModalOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(true); // Auth modal initially open
   const [isLoggedIn, setIsLoggedIn] = useState(false); // Track login state
-    const [isAccountModalOpen, setIsAccountModalOpen] = useState(false); // State for AccountModal
-    const [showLoginPrompt, setShowLoginPrompt] = useState(false); // Show login prompt after logout
-    const [cartVisible, setCartVisible] = useState(false);
-    const [showNoItemsMessage, setShowNoItemsMessage] = useState(false);
-
+  const [isAccountModalOpen, setIsAccountModalOpen] = useState(false); // State for AccountModal
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false); // Show login prompt after logout
+  const [cartVisible, setCartVisible] = useState(false);
+  const [showNoItemsMessage, setShowNoItemsMessage] = useState(false);
 
 
   const cartRef = useRef<HTMLDivElement>(null);
@@ -73,8 +77,13 @@ export default function Home() {
 
   };
     const toggleProfile = () => setProfileOpen(!profileOpen);
-  const toggleOrders = () => setOrdersOpen(!ordersOpen);
-  const toggleSearch = () => setSearchOpen(!searchOpen);
+    const toggleOrders = () => {
+      setOrdersOpen(!ordersOpen);
+      if (!ordersOpen) {
+        fetchOrderItems(); // Fetch orders when opening dropdown
+      }
+    };
+      const toggleSearch = () => setSearchOpen(!searchOpen);
   const toggleMenu = () => setMenuOpen(!menuOpen);
 
   const handleLogin = (userData: any) => {
@@ -126,6 +135,54 @@ export default function Home() {
       setCartItems([]);
     }
   }, [cartVisible, user]);
+
+  const fetchOrderItems = useCallback(async () => {
+    if (user && user.orders.length > 0) {
+      try {
+        // Fetch orders by IDs
+        const ordersResponse = await fetch('http://localhost:5000/api/orders/orders', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ ids: user.orders }),
+        });
+        if (!ordersResponse.ok) {
+          throw new Error('Failed to fetch orders');
+        }
+        const orders = await ordersResponse.json();
+  
+        // Extract product IDs from orders
+        const productIds = orders.flatMap((order: any) => order.products);
+  
+        // Fetch products by IDs
+        const productsResponse = await fetch('http://localhost:5000/api/products/products/by-ids', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ ids: productIds }),
+        });
+        if (!productsResponse.ok) {
+          throw new Error('Failed to fetch products');
+        }
+        const products = await productsResponse.json();
+  
+        setOrders(products);
+      } catch (error) {
+        console.error('Error fetching orders and products:', error);
+      }
+    } else {
+      setOrders([]);
+    }
+  }, [user]);
+  
+  
+  
+  useEffect(() => {
+    console.log('User Orders:', user?.orders);
+    fetchOrderItems();
+  }, [user, fetchOrderItems]);
   
   
   useEffect(() => {
@@ -264,23 +321,24 @@ export default function Home() {
                   <span className="text-sm text-gray-900">Orders</span>
                 </div>
                 {ordersOpen && (
-                  <div ref={ordersRef} className={`${styles.dropdown} absolute right-0 mt-2`}>
-                    {orders.length === 0 ? (
-                      <div className="p-4 text-center">
-                        <FaSadTear className="text-3xl text-gray-500 mx-auto" />
-                        <p className="text-gray-500">No orders found</p>
-                      </div>
-                    ) : (
-                      <ul>
-                        {orders.map((order, index) => (
-                          <li key={index} className="p-4 border-b border-gray-200">
-                            {order}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                )}
+ <div ref={ordersRef} className={`${styles.dropdown} absolute right-0 mt-2`}>
+ {orders.length === 0 ? (
+   <div className={styles.emptyMessage}>You have no orders</div>
+ ) : (
+   <div className={styles.dropdownScroll}>
+     {orders.map((order) => (
+       <div key={order._id} className={styles.dropdownItem}>
+         <Image src={order.imageUrl} alt={order.name} width={50} height={50} />
+         <span>{order.name}</span>
+         <span>${order.price}</span>
+       </div>
+     ))}
+   </div>
+ )}
+</div>
+
+)}
+
               </div>
               <div className={`relative flex flex-col items-center ${styles.iconContainer}`}>
                 <div className="flex flex-col items-center cursor-pointer" onClick={openModal}>

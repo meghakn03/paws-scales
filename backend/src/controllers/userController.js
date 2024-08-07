@@ -97,11 +97,12 @@ const placeOrder = async (req, res) => {
   try {
     const newOrder = new Order({ user: userId, products, totalAmount });
     const savedOrder = await newOrder.save();
-    
-    // Update user's order history
+
+    // Update user's order history and clear cart
     const user = await User.findById(userId);
     if (user) {
       user.orders.push(savedOrder._id);
+      user.cart = []; // Clear the user's cart
       await user.save();
       res.status(201).json(savedOrder);
     } else {
@@ -111,6 +112,8 @@ const placeOrder = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+
 
 
 module.exports = { registerUser, loginUser, getUserById, updateUser, deleteUser, addToCart, placeOrder };

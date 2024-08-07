@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { registerUser, loginUser, getUserById, updateUser, deleteUser, addToCart } = require('../controllers/userController');
+const { registerUser, loginUser, getUserById, updateUser, deleteUser, addToCart, placeOrder  } = require('../controllers/userController');
 
 // Register a new user
 router.post('/register', registerUser);
@@ -19,6 +19,10 @@ router.delete('/:id', deleteUser);
 
 // Add product to cart
 router.post('/add-to-cart', addToCart);
+
+// Place an order
+router.post('/place-order', placeOrder);
+
 
 
 

@@ -10,6 +10,8 @@ import YourProductsModal from './components/YourProuductsModal';
 import AuthModal from './components/AuthModal';
 import AccountModal from './components/AccountModal'; // Import AccountModal
 import { useAuth } from './contexts/AuthContext'; // Adjust the path as needed
+import PlaceOrderButton from './components/PlaceOrderButton';
+
 
 
 type CartItem = {
@@ -18,6 +20,16 @@ type CartItem = {
   price: string;
   imageUrl: string;
 };
+
+
+type User = {
+  _id: string;
+  name: string;
+  email: string;
+  products: string[]; // Array of product IDs
+  cart: string[]; // Array of product IDs
+  orders: string[]; // Array of order IDs
+}
 
 export default function Home() {
   const { user, setUser } = useAuth();
@@ -35,6 +47,7 @@ export default function Home() {
     const [isAccountModalOpen, setIsAccountModalOpen] = useState(false); // State for AccountModal
     const [showLoginPrompt, setShowLoginPrompt] = useState(false); // Show login prompt after logout
     const [cartVisible, setCartVisible] = useState(false);
+    const [showNoItemsMessage, setShowNoItemsMessage] = useState(false);
 
 
 
@@ -56,6 +69,8 @@ export default function Home() {
   const toggleCart = () => {
     setCartOpen(!cartOpen);
     setCartVisible(!cartVisible); // Trigger cart items fetching
+    fetchCartItems(); // Ensure it is called
+
   };
     const toggleProfile = () => setProfileOpen(!profileOpen);
   const toggleOrders = () => setOrdersOpen(!ordersOpen);
@@ -88,6 +103,7 @@ export default function Home() {
   };
 
   const fetchCartItems = useCallback(async () => {
+    console.log('Fetching cart items:', user?.cart);
     if (cartVisible && user && user.cart.length > 0) {
       try {
         const response = await fetch('http://localhost:5000/api/products/products/by-ids', {
@@ -105,14 +121,36 @@ export default function Home() {
       } catch (error) {
         console.error('Error fetching cart items:', error);
       }
+    } else {
+      // Set cartItems to an empty array if there are no items in the cart
+      setCartItems([]);
     }
   }, [cartVisible, user]);
   
+  
   useEffect(() => {
     fetchCartItems();
-  }, [fetchCartItems]);
+  }, [fetchCartItems, cartVisible]); // Add cartVisible to dependencies if needed
   
- 
+  
+  const handleOrderPlaced = async () => {
+    try {
+      // Clear cart items in the frontend
+      setCartItems([]);
+      
+      // Directly update the user object in context
+      if (user) {
+        const updatedUser = { ...user, cart: [] }; // Set cart to empty
+        setUser(updatedUser);
+      }
+      
+      setShowNoItemsMessage(true);
+    } catch (error) {
+      console.error('Error handling order placement:', error);
+    }
+  };
+  
+  
   
   
 
@@ -170,32 +208,37 @@ export default function Home() {
     <span className="text-sm text-gray-900">Cart</span>
   </div>
   {cartOpen && (
-    <div ref={cartRef} className={`${styles.dropdown} ${styles.dropdownScroll}`}>
-      {cartItems.length === 0 ? (
-        <div className={`${styles.emptyMessage}`}>
-          <FaSadTear className="text-3xl text-gray-500 mx-auto" />
-          <p className="text-gray-500">Cart is empty</p>
-        </div>
-      ) : (
-        <ul>
-          {cartItems.map((item) => (
-            <li key={item._id} className={`${styles.dropdownItem}`}>
-              <Image src={item.imageUrl} alt={item.name} width={50} height={50} className="w-12 h-12 object-cover" />
-              <div>
-                <p className="text-gray-900 font-medium">{item.name}</p>
-                <p className="text-gray-600">${item.price}</p>
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
-      {cartItems.length > 0 && (
-        <button className={`${styles.placeOrderButton}`}>
-          Place Order
-        </button>
-      )}
-    </div>
-  )}
+      <div ref={cartRef} className={`${styles.dropdown} ${styles.dropdownScroll}`}>
+        {cartItems.length === 0 ? (
+          <div className={`${styles.emptyMessage}`}>
+            <FaSadTear className="text-3xl text-gray-500 mx-auto" />
+            <p className="text-gray-500">{showNoItemsMessage ? 'No more items in cart' : 'Cart is empty'}</p>
+          </div>
+        ) : (
+          <>
+            <ul>
+              {cartItems.map((item) => (
+                <li key={item._id} className={`${styles.dropdownItem}`}>
+                  <Image src={item.imageUrl} alt={item.name} width={50} height={50} className="w-12 h-12 object-cover" />
+                  <div>
+                    <p className="text-gray-900 font-medium">{item.name}</p>
+                    <p className="text-gray-600">${item.price}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+            {user && ( // Ensure user is defined before rendering PlaceOrderButton
+            <PlaceOrderButton 
+              userId={user._id} 
+              cartItems={cartItems} 
+              totalAmount={cartItems.reduce((sum, item) => sum + parseFloat(item.price), 0)}
+              onOrderPlaced={handleOrderPlaced} // Pass the callback
+            />
+          )}
+          </>
+        )}
+      </div>
+    )}
 </div>
 
               <div className={`relative flex flex-col items-center ${styles.iconContainer}`}>

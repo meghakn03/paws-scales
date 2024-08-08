@@ -62,9 +62,10 @@ export default function Home() {
   const [showNoItemsMessage, setShowNoItemsMessage] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loadingCart, setLoadingCart] = useState(false);
-const [loadingProfile, setLoadingProfile] = useState(false);
-const [loadingOrders, setLoadingOrders] = useState(false);
-const [selectedOrder, setSelectedOrder] = useState<OrderItem | null>(null);
+  const [loadingProfile, setLoadingProfile] = useState(false);
+  const [loadingOrders, setLoadingOrders] = useState(false);
+  const [loadingCategory, setLoadingCategory] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<OrderItem | null>(null);
 
 
 
@@ -90,14 +91,14 @@ const [selectedOrder, setSelectedOrder] = useState<OrderItem | null>(null);
     fetchCartItems(); // Ensure it is called
 
   };
-    const toggleProfile = () => setProfileOpen(!profileOpen);
-    const toggleOrders = () => {
-      setOrdersOpen(!ordersOpen);
-      if (!ordersOpen) {
-        fetchOrderItems(); // Fetch orders when opening dropdown
-      }
-    };
-      const toggleSearch = () => setSearchOpen(!searchOpen);
+  const toggleProfile = () => setProfileOpen(!profileOpen);
+  const toggleOrders = () => {
+    setOrdersOpen(!ordersOpen);
+    if (!ordersOpen) {
+      fetchOrderItems(); // Fetch orders when opening dropdown
+    }
+  };
+  const toggleSearch = () => setSearchOpen(!searchOpen);
   const toggleMenu = () => setMenuOpen(!menuOpen);
 
   const handleLogin = (userData: any) => {
@@ -163,10 +164,10 @@ const [selectedOrder, setSelectedOrder] = useState<OrderItem | null>(null);
           throw new Error('Failed to fetch orders');
         }
         const ordersData = await ordersResponse.json();
-  
+
         // Extract product IDs from orders
         const productIds = ordersData.flatMap((order: any) => order.products);
-  
+
         // Fetch products by IDs
         const productsResponse = await fetch('http://localhost:5000/api/products/products/by-ids', {
           method: 'POST',
@@ -179,7 +180,7 @@ const [selectedOrder, setSelectedOrder] = useState<OrderItem | null>(null);
           throw new Error('Failed to fetch products');
         }
         const products = await productsResponse.json();
-  
+
         setOrders(ordersData.map((order: any) => ({
           ...order,
           products: products.filter((product: any) => order.products.includes(product._id)),
@@ -193,47 +194,47 @@ const [selectedOrder, setSelectedOrder] = useState<OrderItem | null>(null);
       setOrders([]);
     }
   }, [user]);
-  
-  
-  
+
+
+
   useEffect(() => {
     console.log('User Orders:', user?.orders);
     fetchOrderItems();
   }, [user, fetchOrderItems]);
-  
-  
+
+
   useEffect(() => {
     fetchCartItems();
   }, [fetchCartItems, cartVisible]); // Add cartVisible to dependencies if needed
-  
-  
+
+
   const handleOrderPlaced = async () => {
     try {
       // Clear cart items in the frontend
       setCartItems([]);
-      
+
       // Directly update the user object in context
       if (user) {
         const updatedUser = { ...user, cart: [] }; // Set cart to empty
         setUser(updatedUser);
       }
-      
+
       setShowNoItemsMessage(true);
     } catch (error) {
       console.error('Error handling order placement:', error);
     }
   };
-  
+
   const handleOrderClick = async (order: any) => {
     try {
       setLoading(true); // Set loading state
-  
+
       // If the clicked order is already selected, close the dropdown
       if (selectedOrder?._id === order._id) {
         setSelectedOrder(null);
         return;
       }
-  
+
       const productsResponse = await fetch('http://localhost:5000/api/products/products/by-ids', {
         method: 'POST',
         headers: {
@@ -241,24 +242,24 @@ const [selectedOrder, setSelectedOrder] = useState<OrderItem | null>(null);
         },
         body: JSON.stringify({ ids: order.products }),
       });
-  
+
       if (!productsResponse.ok) {
         throw new Error('Failed to fetch products');
       }
-  
+
       const products = await productsResponse.json();
       setSelectedOrder({ ...order, products });
-  
+
     } catch (error) {
       console.error('Error fetching order products:', error);
     } finally {
       setLoading(false); // Reset loading state
     }
   };
-  
-  
-  
-  
+
+
+
+
 
   // Close the dropdowns and menu when clicking outside
   useEffect(() => {
@@ -286,172 +287,164 @@ const [selectedOrder, setSelectedOrder] = useState<OrderItem | null>(null);
     };
   }, []);
 
+  const handleCategoryClick = () => {
+    setLoadingCategory(true);
+    // Simulate a network request or perform actual loading
+    setTimeout(() => setLoadingCategory(false), 2000); // Example delay
+  };
+
+
   return (
     <div className="min-h-screen bg-gray-50">
-     <header className="relative z-20"> {/* Ensure this has a higher z-index */}
-  <div className="flex justify-between items-center p-4">
-    <h1 className="text-3xl font-bold text-gray-900">Paws & Scales</h1>
-    {isLoggedIn && (
-      <div className="flex items-center space-x-4">
-        {/* Search Dropdown */}
-        <div className={`relative flex flex-col items-center ${styles.iconContainer}`}>
-          <div className="flex flex-col items-center cursor-pointer" onClick={toggleSearch}>
-            <FaSearch className="text-2xl text-gray-900" />
-            <span className="text-sm text-gray-900">Search</span>
-          </div>
-          {searchOpen && (
-            <div ref={searchRef} className={`${styles.dropdown} absolute right-0 mt-2`}>
-              <input
-                type="text"
-                placeholder="Search..."
-                className="w-full p-2 border border-gray-300 rounded-md"
-              />
-            </div>
-          )}
-        </div>
+      <header className="relative z-20"> {/* Ensure this has a higher z-index */}
+        <div className="flex justify-between items-center p-4">
+          <h1 className="text-3xl font-bold text-gray-900">Paws&Scales</h1>
+          {isLoggedIn && (
+            <div className="flex items-center space-x-4">
 
-        {/* Cart Dropdown */}
-        <div className={`relative flex flex-col items-center ${styles.iconContainer}`}>
-          <div className="flex flex-col items-center cursor-pointer" onClick={() => { toggleCart(); fetchCartItems(); }}>
-            <FaShoppingCart className="text-2xl text-gray-900" />
-            <span className="text-sm text-gray-900">Cart</span>
-          </div>
-          {cartOpen && (
-            <div ref={cartRef} className={`${styles.dropdown} ${styles.dropdownScroll}`}>
-              {loadingCart ? ( // Check if loadingCart is true to show the loader
-                <LottieLoader /> // Display the loader
-              ) : cartItems.length === 0 ? (
-                <div className={`${styles.emptyMessage}`}>
-                  <FaSadTear className="text-3xl text-gray-500 mx-auto" />
-                  <p className="text-gray-500">{showNoItemsMessage ? 'No more items in cart' : 'Cart is empty'}</p>
+
+              {/* Cart Dropdown */}
+              <div className={`relative flex flex-col items-center ${styles.iconContainer}`}>
+                <div className="flex flex-col items-center cursor-pointer" onClick={() => { toggleCart(); fetchCartItems(); }}>
+                  <FaShoppingCart className="text-2xl text-gray-900" />
+                  <span className="text-xs text-gray-900">Cart</span>
                 </div>
-              ) : (
-                <>
-                  <ul>
-                    {cartItems.map((item) => (
-                      <li key={item._id} className={`${styles.dropdownItem}`}>
-                        <Image src={item.imageUrl} alt={item.name} width={50} height={50} className="w-12 h-12 object-cover" />
-                        <div>
-                          <p className="text-gray-900 font-medium">{item.name}</p>
-                          <p className="text-gray-600">${item.price}</p>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                  {user && ( // Ensure user is defined before rendering PlaceOrderButton
-                    <PlaceOrderButton 
-                      userId={user._id} 
-                      cartItems={cartItems} 
-                      totalAmount={cartItems.reduce((sum, item) => sum + parseFloat(item.price), 0)}
-                      onOrderPlaced={handleOrderPlaced} // Pass the callback
-                    />
-                  )}
-                </>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Profile Dropdown */}
-        <div className={`relative flex flex-col items-center ${styles.iconContainer}`}>
-          <div className="flex flex-col items-center cursor-pointer" onClick={toggleProfile}>
-            <FaUserCircle className="text-2xl text-gray-900" />
-            <span className="text-sm text-gray-900">Profile</span>
-          </div>
-          {profileOpen && (
-            <div ref={profileRef} className={`${styles.dropdown} absolute right-0 mt-2`}>
-              {loadingProfile ? ( // Check if loadingProfile is true to show the loader
-                <LottieLoader /> // Display the loader
-              ) : (
-                <ul>
-                  <li className="p-4 border-b border-gray-200 cursor-pointer hover:bg-gray-100" onClick={openAccountModal}>Account</li>
-                  <li className="p-4 border-b border-gray-200 cursor-pointer hover:bg-gray-100">Privacy and Security</li>
-                  <li className="p-4 border-b border-gray-200 cursor-pointer hover:bg-gray-100">Help</li>
-                  <li className="p-4 border-b border-gray-200 cursor-pointer hover:bg-gray-100">Customer Contact</li>
-                  <li className="p-4 cursor-pointer hover:bg-gray-100" onClick={handleLogout}>Log Out</li>
-                </ul>
-              )}
-            </div>
-          )}
-        </div>
-{/* Orders Dropdown */}
-<div className={`relative flex flex-col items-center ${styles.iconContainer}`}>
-  <div className="flex flex-col items-center cursor-pointer" onClick={toggleOrders}>
-    <FaBox className="text-2xl text-gray-900" />
-    <span className="text-sm text-gray-900 font-semibold">Orders</span>
-  </div>
-  {ordersOpen && (
-    <div ref={ordersRef} className={`${styles.ordersDropdown}`}>
-      {loadingOrders ? (
-        <LottieLoader /> // Display the loader
-      ) : orders.length === 0 ? (
-        <div className={styles.emptyMessage}>You have no orders</div>
-      ) : (
-        <ul className={styles.orderList}>
-          {orders.map((order) => (
-            <li key={order._id} className={`${styles.orderItem} ${selectedOrder?._id === order._id ? styles.selectedOrder : ''}`}>
-              <div className={styles.orderDetails} onClick={() => handleOrderClick(order)}>
-                <div className={styles.orderId}>Order ID: {order._id}</div>
-                <div className={styles.orderDate}>Date: {new Date(order.createdAt).toLocaleDateString()}</div>
-                <div className={styles.orderStatus}>Status: {order.status}</div>
-                <div className={styles.orderAmount}>Total: ${order.totalAmount.toFixed(2)}</div>
-              </div>
-              {selectedOrder?._id === order._id && selectedOrder.products && (
-                <div className={styles.orderProductsDropdown}>
-                  {selectedOrder.products.map((product) => (
-                    <div key={product._id} className={styles.orderProductItem}>
-                      <Image src={product.imageUrl} alt={product.name} width={50} height={50} />
-                      <div className={styles.orderProductDetails}>
-                        <div className={styles.orderProductName}>{product.name}</div>
-                        <div className={styles.orderProductPrice}>${product.price}</div>
+                {cartOpen && (
+                  <div ref={cartRef} className={`${styles.dropdown} ${styles.dropdownScroll}`}>
+                    {loadingCart ? ( // Check if loadingCart is true to show the loader
+                      <LottieLoader /> // Display the loader
+                    ) : cartItems.length === 0 ? (
+                      <div className={`${styles.emptyMessage}`}>
+                        <FaSadTear className="text-3xl text-gray-500 mx-auto" />
+                        <p className="text-gray-500">{showNoItemsMessage ? 'No more items in cart' : 'Cart is empty'}</p>
                       </div>
-                    </div>
-                  ))}
+                    ) : (
+                      <>
+                        <ul>
+                          {cartItems.map((item) => (
+                            <li key={item._id} className={`${styles.dropdownItem}`}>
+                              <Image src={item.imageUrl} alt={item.name} width={50} height={50} className="w-12 h-12 object-cover" />
+                              <div>
+                                <p className="text-gray-900 font-medium">{item.name}</p>
+                                <p className="text-gray-600">${item.price}</p>
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                        {user && ( // Ensure user is defined before rendering PlaceOrderButton
+                          <PlaceOrderButton
+                            userId={user._id}
+                            cartItems={cartItems}
+                            totalAmount={cartItems.reduce((sum, item) => sum + parseFloat(item.price), 0)}
+                            onOrderPlaced={handleOrderPlaced} // Pass the callback
+                          />
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+
+             
+              {/* Orders Dropdown */}
+              <div className={`relative flex flex-col items-center ${styles.iconContainer}`}>
+                <div className="flex flex-col items-center cursor-pointer" onClick={toggleOrders}>
+                  <FaBox className="text-2xl text-gray-900" />
+                  <span className="text-xs text-gray-900">Orders</span>
                 </div>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  )}
-</div>
+                {ordersOpen && (
+                  <div ref={ordersRef} className={`${styles.ordersDropdown}`}>
+                    {loadingOrders ? (
+                      <LottieLoader /> // Display the loader
+                    ) : orders.length === 0 ? (
+                      <div className={styles.emptyMessage}>You have no orders</div>
+                    ) : (
+                      <ul className={styles.orderList}>
+                        {orders.map((order) => (
+                          <li key={order._id} className={`${styles.orderItem} ${selectedOrder?._id === order._id ? styles.selectedOrder : ''}`}>
+                            <div className={styles.orderDetails} onClick={() => handleOrderClick(order)}>
+                              <div className={styles.orderId}>Order ID: {order._id}</div>
+                              <div className={styles.orderDate}>Date: {new Date(order.createdAt).toLocaleDateString()}</div>
+                              <div className={styles.orderStatus}>Status: {order.status}</div>
+                              <div className={styles.orderAmount}>Total: ${order.totalAmount.toFixed(2)}</div>
+                            </div>
+                            {selectedOrder?._id === order._id && selectedOrder.products && (
+                              <div className={styles.orderProductsDropdown}>
+                                {selectedOrder.products.map((product) => (
+                                  <div key={product._id} className={styles.orderProductItem}>
+                                    <Image src={product.imageUrl} alt={product.name} width={50} height={50} />
+                                    <div className={styles.orderProductDetails}>
+                                      <div className={styles.orderProductName}>{product.name}</div>
+                                      <div className={styles.orderProductPrice}>${product.price}</div>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                )}
+              </div>
+
+
+ {/* Profile Dropdown */}
+ <div className={`relative flex flex-col items-center ${styles.iconContainer}`}>
+                <div className="flex flex-col items-center cursor-pointer" onClick={toggleProfile}>
+                  <FaUserCircle className="text-2xl text-gray-900" />
+                  <span className="text-xs text-gray-900">Profile</span>
+                </div>
+                {profileOpen && (
+                  <div ref={profileRef} className={`${styles.dropdown} absolute right-0 mt-2`}>
+                    {loadingProfile ? ( // Check if loadingProfile is true to show the loader
+                      <LottieLoader /> // Display the loader
+                    ) : (
+                      <ul>
+                        <li className="p-4 border-b border-gray-200 cursor-pointer hover:bg-gray-100" onClick={openAccountModal}>Account</li>
+                        <li className="p-4 border-b border-gray-200 cursor-pointer hover:bg-gray-100">Privacy and Security</li>
+                        <li className="p-4 border-b border-gray-200 cursor-pointer hover:bg-gray-100">Help</li>
+                        <li className="p-4 border-b border-gray-200 cursor-pointer hover:bg-gray-100">Customer Contact</li>
+                        <li className="p-4 cursor-pointer hover:bg-gray-100" onClick={handleLogout}>Log Out</li>
+                      </ul>
+                    )}
+                  </div>
+                )}
+              </div>
 
 
 
+              {/* Sell Product Dropdown */}
+              <div className={`relative flex flex-col items-center ${styles.iconContainer}`}>
+                <div className="flex flex-col items-center cursor-pointer" onClick={openModal}>
+                  <FaPlus className="text-2xl text-gray-900" />
+                  <span className="text-xs text-gray-900">Sell Product</span>
+                </div>
+              </div>
 
-
-
-        {/* Sell Product Dropdown */}
-        <div className={`relative flex flex-col items-center ${styles.iconContainer}`}>
-          <div className="flex flex-col items-center cursor-pointer" onClick={openModal}>
-            <FaPlus className="text-2xl text-gray-900" />
-            <span className="text-sm text-gray-900">Sell Product</span>
-          </div>
+              {/* Your Products Dropdown */}
+              <div className={`relative flex flex-col items-center ${styles.iconContainer}`}>
+                <div className="flex flex-col items-center cursor-pointer" onClick={openYourProductsModal}>
+                  <FaBox className="text-2xl text-gray-900" />
+                  <span className="text-xs text-gray-900">Your Products</span>
+                </div>
+              </div>
+            </div>
+          )}
+          {!isLoggedIn && (
+            <div className="flex items-center space-x-4">
+              <button
+                className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-md shadow-sm hover:bg-gray-100"
+                onClick={handleLoginPrompt}
+              >
+                <FaSignInAlt className="text-lg text-gray-900" />
+                <span className="text-gray-900">Log In</span>
+              </button>
+            </div>
+          )}
         </div>
-
-        {/* Your Products Dropdown */}
-        <div className={`relative flex flex-col items-center ${styles.iconContainer}`}>
-          <div className="flex flex-col items-center cursor-pointer" onClick={openYourProductsModal}>
-            <FaBox className="text-2xl text-gray-900" />
-            <span className="text-sm text-gray-900">Your Products</span>
-          </div>
-        </div>
-      </div>
-    )}
-    {!isLoggedIn && (
-      <div className="flex items-center space-x-4">
-        <button
-          className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-md shadow-sm hover:bg-gray-100"
-          onClick={handleLoginPrompt}
-        >
-          <FaSignInAlt className="text-lg text-gray-900" />
-          <span className="text-gray-900">Log In</span>
-        </button>
-      </div>
-    )}
-  </div>
-</header>
+      </header>
 
       {/* Hero Section with Video */}
       <section className={`${styles.hero} relative z-0`}>
@@ -475,60 +468,66 @@ const [selectedOrder, setSelectedOrder] = useState<OrderItem | null>(null);
         <div className={`${styles.categoriesContainer} py-10`}>
           <h2 className="text-2xl font-bold text-center mb-6">Categories</h2>
           <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 px-4 sm:px-6 lg:px-8">
-            <Link href="/category/dog-supplies">
-              <div className={styles.categoryCard}>
-                <Image src="/dog-supplies.jpg" alt="Dog Supplies" width={500} height={500} className="w-full h-48 object-cover" />
-                <div className="p-6">
-                  <h3 className="text-lg font-medium text-gray-900">Dog Supplies</h3>
-                  <p className="mt-2 text-gray-600">All essentials for your dog.</p>
-                </div>
-              </div>
-            </Link>
-            <Link href="/category/cat-supplies">
-              <div className={styles.categoryCard}>
-                <Image src="/cat-supplies.jpg" alt="Cat Supplies" width={500} height={500} className="w-full h-48 object-cover" />
-                <div className="p-6">
-                  <h3 className="text-lg font-medium text-gray-900">Cat Supplies</h3>
-                  <p className="mt-2 text-gray-600">All essentials for your cat.</p>
-                </div>
-              </div>
-            </Link>
-            <Link href="/category/bird-supplies">
-              <div className={styles.categoryCard}>
-                <Image src="/bird-supplies.jpg" alt="Bird Supplies" width={500} height={500} className="w-full h-48 object-cover" />
-                <div className="p-6">
-                  <h3 className="text-lg font-medium text-gray-900">Bird Supplies</h3>
-                  <p className="mt-2 text-gray-600">All essentials for your bird.</p>
-                </div>
-              </div>
-            </Link>
-            <Link href="/category/fish-supplies">
-              <div className={styles.categoryCard}>
-                <Image src="/fish-supplies.jpg" alt="Fish Supplies" width={500} height={500} className="w-full h-48 object-cover" />
-                <div className="p-6">
-                  <h3 className="text-lg font-medium text-gray-900">Fish Supplies</h3>
-                  <p className="mt-2 text-gray-600">All essentials for your fish.</p>
-                </div>
-              </div>
-            </Link>
-            <Link href="/category/reptile-supplies">
-              <div className={styles.categoryCard}>
-                <Image src="/reptile-supplies.jpg" alt="Reptile Supplies" width={500} height={500} className="w-full h-48 object-cover" />
-                <div className="p-6">
-                  <h3 className="text-lg font-medium text-gray-900">Reptile Supplies</h3>
-                  <p className="mt-2 text-gray-600">All essentials for your reptile.</p>
-                </div>
-              </div>
-            </Link>
-            <Link href="/category/small-pet-supplies">
-              <div className={styles.categoryCard}>
-                <Image src="/small-pet-supplies.jpg" alt="Small Pet Supplies" width={500} height={500} className="w-full h-48 object-cover" />
-                <div className="p-6">
-                  <h3 className="text-lg font-medium text-gray-900">Small Pet Supplies</h3>
-                  <p className="mt-2 text-gray-600">All essentials for your small pet.</p>
-                </div>
-              </div>
-            </Link>
+            {loadingCategory ? (
+              <LottieLoader /> // Show loader when loading
+            ) : (
+              <>
+                <Link href="/category/dog-supplies">
+                  <div className={styles.categoryCard} onClick={handleCategoryClick}>
+                    <Image src="/dog-supplies.jpg" alt="Dog Supplies" width={500} height={500} className="w-full h-48 object-cover" />
+                    <div className="p-6">
+                      <h3 className="text-lg font-medium text-gray-900">Dog Supplies</h3>
+                      <p className="mt-2 text-gray-600">All essentials for your dog.</p>
+                    </div>
+                  </div>
+                </Link>
+                <Link href="/category/cat-supplies">
+                  <div className={styles.categoryCard} onClick={handleCategoryClick}>
+                    <Image src="/cat-supplies.jpg" alt="Cat Supplies" width={500} height={500} className="w-full h-48 object-cover" />
+                    <div className="p-6">
+                      <h3 className="text-lg font-medium text-gray-900">Cat Supplies</h3>
+                      <p className="mt-2 text-gray-600">All essentials for your cat.</p>
+                    </div>
+                  </div>
+                </Link>
+                <Link href="/category/bird-supplies">
+                  <div className={styles.categoryCard} onClick={handleCategoryClick}>
+                    <Image src="/bird-supplies.jpg" alt="Bird Supplies" width={500} height={500} className="w-full h-48 object-cover" />
+                    <div className="p-6">
+                      <h3 className="text-lg font-medium text-gray-900">Bird Supplies</h3>
+                      <p className="mt-2 text-gray-600">All essentials for your bird.</p>
+                    </div>
+                  </div>
+                </Link>
+                <Link href="/category/fish-supplies">
+                  <div className={styles.categoryCard} onClick={handleCategoryClick}>
+                    <Image src="/fish-supplies.jpg" alt="Fish Supplies" width={500} height={500} className="w-full h-48 object-cover" />
+                    <div className="p-6">
+                      <h3 className="text-lg font-medium text-gray-900">Fish Supplies</h3>
+                      <p className="mt-2 text-gray-600">All essentials for your fish.</p>
+                    </div>
+                  </div>
+                </Link>
+                <Link href="/category/reptile-supplies">
+                  <div className={styles.categoryCard} onClick={handleCategoryClick}>
+                    <Image src="/reptile-supplies.jpg" alt="Reptile Supplies" width={500} height={500} className="w-full h-48 object-cover" />
+                    <div className="p-6">
+                      <h3 className="text-lg font-medium text-gray-900">Reptile Supplies</h3>
+                      <p className="mt-2 text-gray-600">All essentials for your reptile.</p>
+                    </div>
+                  </div>
+                </Link>
+                <Link href="/category/small-pet-supplies">
+                  <div className={styles.categoryCard} onClick={handleCategoryClick}>
+                    <Image src="/small-pet-supplies.jpg" alt="Small Pet Supplies" width={500} height={500} className="w-full h-48 object-cover" />
+                    <div className="p-6">
+                      <h3 className="text-lg font-medium text-gray-900">Small Pet Supplies</h3>
+                      <p className="mt-2 text-gray-600">All essentials for your small pet.</p>
+                    </div>
+                  </div>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </main>

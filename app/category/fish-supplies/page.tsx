@@ -258,28 +258,7 @@ export default function FishSuppliesPage() {
           </div>
         )}
 
-      <button className={`${styles.iconButton} p-2 bg-transparent border-none`} onClick={toggleOrdersVisibility}>
-        <FontAwesomeIcon icon={faClipboardList} size="lg" className={`${styles.icon} text-white`} />
-      </button>
-      {ordersVisible && (
-        <div className={styles.dropdown}>
-          {orderItems.length > 0 ? (
-            <ul>
-              {orderItems.map((item) => (
-                <li key={item._id} className={styles.dropdownItem}>
-                  <Image src={item.imageUrl} alt={item.name} width={50} height={50} />
-                  <span>{item.name}</span> - <span>${item.price}</span>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <div className={styles.emptyMessage}>
-              <FontAwesomeIcon icon={faSadTear} size="lg" />
-              <p>No Orders</p>
-            </div>
-          )}
-        </div>
-      )}
+     
     </header>
 
       {/* Hero Section with Video */}

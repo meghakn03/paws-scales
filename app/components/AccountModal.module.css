@@ -1,69 +1,97 @@
-/* AccountModal.module.css */
-
 .modalOverlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.4); /* Slightly lighter overlay */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000; /* Ensure modal is above other content */
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.8); /* Darker overlay */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000; /* Ensure modal is above other content */
+}
+
+.modalContent {
+  background: #f4f0f0;
+  padding: 20px;
+  border-radius: 15px; /* Softer corners */
+  width: 90%;
+  max-width: 500px; /* Increase max width for larger content */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5); /* Subtle shadow for depth */
+  animation: fadeIn 0.4s ease-out; /* Smooth fade-in effect */
+}
+
+/* Fade-in animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
   }
-  
-  .modalContent {
-    background: #ffffff;
-    padding: 20px;
-    border-radius: 10px; /* Softer corners */
-    width: 90%;
-    max-width: 400px; /* Increase max width for larger content */
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Subtle shadow for depth */
-    animation: fadeIn 0.3s ease-out; /* Smooth fade-in effect */
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
-  
-  /* Fade-in animation */
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-      transform: translateY(-10px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-  
-  .header {
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: #333;
-    margin-bottom: 15px;
-  }
-  
-  .text {
-    font-size: 1rem;
-    color: #555;
-    margin-bottom: 10px;
-  }
-  
-  .bold {
-    color: #333;
-  }
-  
-  .button {
-    background-color: #4a90e2; /* More appealing blue color */
-    color: #ffffff;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 5px; /* Rounded corners for the button */
-    cursor: pointer;
-    font-size: 1rem;
-    transition: background-color 0.3s ease; /* Smooth color transition */
-  }
-  
-  .button:hover {
-    background-color: #357abd; /* Darker blue on hover */
-  }
-  
+}
+
+.header {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #0a0a0a;
+  margin-bottom: 20px;
+  text-align: center; /* Center the header */
+}
+
+.profileSection {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.profileEmoji {
+  font-size: 3rem; /* Larger emoji size */
+  margin-right: 15px;
+}
+
+.profileDetails {
+  display: flex;
+  flex-direction: column;
+}
+
+.name {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #141313;
+}
+
+.email {
+  font-size: 1rem;
+  color: #2f2d2d;
+}
+
+.text {
+  font-size: 1.2rem;
+  color: #101010;
+  margin-bottom: 15px;
+}
+
+.bold {
+  color: #050505;
+}
+
+.button {
+  background-color: #0b0b0b; /* More appealing color */
+  color: #ffffff;
+  padding: 12px 25px;
+  border: none;
+  border-radius: 5px; /* Rounded corners for the button */
+  cursor: pointer;
+  font-size: 1.2rem;
+  transition: background-color 0.3s ease; /* Smooth color transition */
+  display: block;
+  margin: 0 auto; /* Center the button */
+  width: 100%;
+}
+
+.button:hover {
+  background-color: #212020; /* Darker color on hover */
+}
